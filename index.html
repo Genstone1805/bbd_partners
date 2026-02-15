@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Garment Order Form</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Custom Garment Order Form</h1>
+            <p>Complete your personalized uniform order</p>
+            <div style="margin-top:8px;">
+                <a href="#" id="viewSizeGuides">View size guides</a>
+            </div>
+        </header>
+
+        <nav class="progress-bar" aria-label="Order progress">
+            <div class="progress-steps" role="list">
+                <div class="progress-step active" id="step1" role="listitem" aria-current="step">
+                    <div class="step-circle">1</div>
+                    <div class="step-label">Order Type</div>
+                </div>
+                <div class="progress-step" id="step2" role="listitem">
+                    <div class="step-circle">2</div>
+                    <div class="step-label">Garment</div>
+                </div>
+                <div class="progress-step" id="step3" role="listitem">
+                    <div class="step-circle">3</div>
+                    <div class="step-label">Decoration</div>
+                </div>
+                <div class="progress-step" id="step4" role="listitem">
+                    <div class="step-circle">4</div>
+                    <div class="step-label">Details</div>
+                </div>
+                <div class="progress-step" id="step5" role="listitem">
+                    <div class="step-circle">5</div>
+                    <div class="step-label">Review</div>
+                </div>
+            </div>
+        </nav>
+
+        <main>
+            <form id="orderForm" novalidate>
+                <div class="form-content">
+
+                    <!-- Section 1: Order Type & Depot -->
+                    <section class="section active" id="section1" aria-labelledby="section1-title">
+                        <div class="alert">
+                            <div class="alert-icon">ℹ️</div>
+                            <div class="alert-content">
+                                <h3>Important Notice</h3>
+                                <p>This order form works for <strong>one garment & one depot at a time</strong>. You
+                                    will have the option once you've completed to come back and add another
+                                    garment/depot.</p>
+                            </div>
+                        </div>
+
+                        <h2 class="section-title" id="section1-title">Order Information</h2>
+
+                        <div class="form-group">
+                            <label class="form-label required">Is this order for an individual or for a
+                                department?</label>
+                            <div class="radio-group">
+                                <label class="radio-option" onclick="selectOrderType('individual', this)">
+                                    <input type="radio" name="orderType" value="individual">
+                                    <div class="option-details">
+                                        <div class="option-title">Individual Person</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option" onclick="selectOrderType('department', this)">
+                                    <input type="radio" name="orderType" value="department">
+                                    <div class="option-details">
+                                        <div class="option-title">Department (Multiple People)</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">Choose your depot</label>
+                            <select class="select-input" id="depot" onchange="selectDepot()">
+                                <option value="">Select depot...</option>
+                                <option value="174 NORTH STREET|ALBURY|NSW|2640">Albury (174 North Street)</option>
+                                <option value="32-56 GALLOWAY STREET|ARMIDALE|NSW|2350">Armidale (32-56 Galloway Street)
+                                </option>
+                                <option value="41 CANAL ROAD|BALLINA|NSW|2478">Ballina (41 Canal Road)</option>
+                                <option value="130 KERRISONS LANE|BEGA|NSW|2550">Bega (130 Kerrisons Lane)</option>
+                                <option value="4 LAWSON STREET|BLAYNEY|NSW|2799">Blayney (4 Lawson Street)</option>
+                                <option value="55 FORBES STREET|BOMBALA|NSW|2580">Bombala (55 Forbes Street)</option>
+                                <option value="37 GILLAMATONG LANE|BRAIDWOOD|NSW|2622">Braidwood (37 Gillamatong Lane)
+                                </option>
+                                <option value="610 WOLFRAM STREET|BROKEN HILL|NSW|2390">Broken Hill (610 Wolfram Street)
+                                </option>
+                                <option value="41 CORBETT AVENUE|BURONGA|NSW|2739">Buronga (41 Corbett Avenue)</option>
+                                <option value="1-7 POLO FLATE ROAD|COOMA|NSW|2630">Cooma (1-7 Polo Flate Road)</option>
+                                <option value="30 MCINTOSH ROAD|CROOKWELL|NSW|2583">Crookwell (30 McIntosh Road)
+                                </option>
+                                <option value="401-417 CALIMO STREET|DENILIQUIN|NSW|2705">Deniliquin (401-417 Calimo
+                                    Street)</option>
+                                <option value="17 HAWTHORN STREET|DUBBO|NSW|2830">Dubbo (17 Hawthorn Street)</option>
+                                <option value="23 HAWTHORN STREET|DUBBO|NSW|2830">Dubbo (23 Hawthorn Street)</option>
+                                <option value="59-87 HAMMOND AVE|EAST WAGGA WAGGA|NSW|2650">East Wagga Wagga (59-87
+                                    Hammond Ave)</option>
+                                <option value="10 RICHMOND AVENUE|FAIRBAIRN|ATC|2609">Fairbairn (10 Richmond Avenue)
+                                </option>
+                                <option value="25-27 MEMORIAL ROAD|GOULBURN|NSW|2580">Goulburn (25-27 Memorial Road)
+                                </option>
+                                <option value="112 QUEEN STREET|GRAFTON|NSW|2460">Grafton (112 Queen Street)</option>
+                                <option value="187 LAWRENCE ROAD|GRAFTON|NSW|2460">Grafton (187 Lawrence Road)</option>
+                                <option value="91 SALEYARDS ROAD|HARDEN|NSW|2587">Harden (91 Saleyards Road)</option>
+                                <option value="25 BURTENSHAW ROAD|INVERELL|NSW|2360">Inverell (25 Burtenshaw Road)
+                                </option>
+                                <option value="21 HAMPDEN PARK ROAD|KELSO|NSW|2795">Kelso (21 Hampden Park Road)
+                                </option>
+                                <option value="82 WEST STREET|KEMPSEY|NSW|2440">Kempsey (82 West Street)</option>
+                                <option value="11 CRAIG STREET|KYOGLE|NSW|2474">Kyogle (11 Craig Street)</option>
+                                <option value="7 BRADY WAY|LEETON|NSW|2705">Leeton (7 Brady Way)</option>
+                                <option value="26 PAPERBARK DRIVE|MACLEAN|NSW|2463">Maclean (26 Paperbark Drive)
+                                </option>
+                                <option value="43 WATSON STREET|MOLONG|NSW|2866">Molong (43 Watson Street)</option>
+                                <option value="210 ARALUEN ROAD|MORUYA|NSW|2537">Moruya (210 Araluen Road)</option>
+                                <option value="22 BURRUNDULLA ROAD|MUDGEE|NSW|2850">Mudgee (22 Burrundulla Road)
+                                </option>
+                                <option value="1 LOGAN STREET|NARRABRI|NSW|2390">Narrabri (1 Logan Street)</option>
+                                <option value="48 NYMAGEE STREET|NARROMINE|NSW|2821">Narromine (48 Nymagee Street)
+                                </option>
+                                <option value="10 FORGE DRIVE|NORTH BOAMBEE VALLEY COFFS HARBOUR|NSW|2450">North Boambee
+                                    Valley Coffs Harbour (10 Forge Drive)</option>
+                                <option value="6 DERRIBONG STREET|NYNGAN|NSW|2825">Nyngan (6 Derribong Street)</option>
+                                <option value="2 LORDS PLACE|ORANGE|NSW|2800">Orange (2 Lords Place)</option>
+                                <option value="61-77 BROLGAN ROAD|PARKES|NSW|2870">Parkes (61-77 Brolgan Road)</option>
+                                <option value="8 BULLER STREET|PORT MACQUARIE|NSW|2444">Port Macquarie (8 Buller Street)
+                                </option>
+                                <option value="115 HINDMAN STREET|PORT MACQUARIE|NSW|2444">Port Macquarie (115 Hindman
+                                    Street)</option>
+                                <option value="2 DUKE STREET|QUIRINDI|NSW|2343">Quirindi (2 Duke Street)</option>
+                                <option value="244 UNION STREET|SOUTH LISMORE|NSW|2480">South Lismore (244 Union Street)
+                                </option>
+                                <option value="16/227 ELIZABETH STREET|SYDNEY|NSW|2000">Sydney (16/227 Elizabeth Street)
+                                </option>
+                                <option value="2A ELECTRA STREET|TAMWORTH|NSW|2340">Tamworth (2A Electra Street)
+                                </option>
+                                <option value="38 WHITBREAD STREET|TAREE|NSW|2430">Taree (38 Whitbread Street)</option>
+                                <option value="26 CADELL STREET|TEXAS|QLD|4385">Texas (26 Cadell Street)</option>
+                                <option value="41-53 MERIVALE STREE|TUMUT|NSW|2720">Tumut (41-53 Merivale Street)
+                                </option>
+                                <option value="39 SUNSHINE AVENUE|TWEEDS HEAD SOUTH|NSW|2486">Tweed's Head South (39
+                                    Sunshine Avenue)</option>
+                                <option value="345 BOOROWA STREET|YOUNG|NSW|2594">Young (345 Boorowa Street)</option>
+                                <option value="other">Other (please note - you will need prior approval if your depot is
+                                    not listed)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="deptSelectSection1" style="display: none;">
+                            <label class="form-label required">Cost Centre <span style="font-weight:400;">(if you are
+                                    unsure please ask your supervisor)</span></label>
+                            <input type="text" id="costCentre" class="text-input"
+                                placeholder="Enter cost centre (required)" />
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" type="button" onclick="nextSection(1)" id="next1"
+                                disabled>Continue</button>
+                        </div>
+                    </section>
+
+                    <!-- Section 2: Choose Garment -->
+                    <section class="section" id="section2" aria-labelledby="section2-title">
+                        <h2 class="section-title" id="section2-title">Choose Your Garment</h2>
+
+                        <div class="reminder-note">
+                            <strong>Reminder:</strong>
+                            You will need to do one garment type at a time. Once you have added this garment to the
+                            cart, you will have an option to come back and add another if you need to.
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">Select garment type</label>
+                            <div class="radio-group">
+                                <label class="radio-option" onclick="selectGarment('mens-polo-xs-5xl', this)">
+                                    <input type="radio" name="garment" value="mens-polo-xs-5xl">
+                                    <div class="option-details">
+                                        <div class="option-title">Mens Polo 1065 (XS - 5XL)</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option" onclick="selectGarment('mens-polo-5xl-10xl', this)">
+                                    <input type="radio" name="garment" value="mens-polo-5xl-10xl">
+                                    <div class="option-details">
+                                        <div class="option-title">Mens Polo JB210 (6XL - 10XL)</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option" onclick="selectGarment('womens-polo-xs-2xl', this)">
+                                    <input type="radio" name="garment" value="womens-polo-xs-2xl">
+                                    <div class="option-details">
+                                        <div class="option-title">Ladies Polo JH201W (XS-2XL)</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option" onclick="selectGarment('womens-polo-20-26', this)">
+                                    <input type="radio" name="garment" value="womens-polo-20-26">
+                                    <div class="option-details">
+                                        <div class="option-title">Ladies Polo 1165 (20 - 26)</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option"
+                                    onclick="selectGarment('premium-unisex-tech-jacket-2xl-5xl', this)">
+                                    <input type="radio" name="garment" value="premium-unisex-tech-jacket-2xl-5xl">
+                                    <div class="option-details">
+                                        <div class="option-title">Podium Unisex Tech Jacket (2XS - 5XL)</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option"
+                                    onclick="selectGarment('mens-olympus-softshell-jacket-s-8xl', this)">
+                                    <input type="radio" name="garment" value="mens-olympus-softshell-jacket-s-8xl">
+                                    <div class="option-details">
+                                        <div class="option-title">Mens Olympus Softshell Jacket (S - 8XL)</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option"
+                                    onclick="selectGarment('ladies-olympus-softshell-jacket-8-26', this)">
+                                    <input type="radio" name="garment" value="ladies-olympus-softshell-jacket-8-26">
+                                    <div class="option-details">
+                                        <div class="option-title">Ladies Olympus Softshell Jacket (8 - 26)</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Price selection dropdown -->
+                        <div class="form-group" id="priceSelectionGroup" style="display: none;">
+                            <label class="form-label required">Select Price Tier</label>
+                            <select class="select-input" id="priceTierSelect" onchange="selectPriceTier(this.value)">
+                                <option value="">Select quantity tier...</option>
+                            </select>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-secondary" type="button" onclick="prevSection(2)">Back</button>
+                            <button class="btn btn-primary" type="button" onclick="nextSection(2)" id="next2"
+                                disabled>Continue</button>
+                        </div>
+                    </section>
+
+                    <!-- Section 3: Decoration Options -->
+                    <section class="section" id="section3" aria-labelledby="section3-title">
+                        <h2 class="section-title" id="section3-title">Choose Your Decoration</h2>
+
+                        <div class="form-group">
+                            <label class="form-label required">Select decoration option</label>
+                            <div class="radio-group">
+                                <label class="radio-option" onclick="selectDecoration('name-only', this)">
+                                    <input type="radio" name="decoration" value="name-only">
+                                    <div class="option-details">
+                                        <div class="option-title">Embroider individual person's name only (RHC)</div>
+                                        <div class="option-price">$8.00</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option" onclick="selectDecoration('logo-name', this)">
+                                    <input type="radio" name="decoration" value="logo-name">
+                                    <div class="option-details">
+                                        <div class="option-title">Embroider logo & individual person's name (RHC)</div>
+                                        <div class="option-price">$12.00</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option" onclick="selectDecoration('logo-only', this)">
+                                    <input type="radio" name="decoration" value="logo-only">
+                                    <div class="option-details">
+                                        <div class="option-title">Embroider logo only (RHC)</div>
+                                        <div class="option-price">$9.50</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option" onclick="selectDecoration('dept-only', this)">
+                                    <input type="radio" name="decoration" value="dept-only">
+                                    <div class="option-details">
+                                        <div class="option-title">Embroider name of department only</div>
+                                        <div class="option-price">$8.50</div>
+                                    </div>
+                                </label>
+                                <label class="radio-option" onclick="selectDecoration('dept-name', this)">
+                                    <input type="radio" name="decoration" value="dept-name">
+                                    <div class="option-details">
+                                        <div class="option-title">Embroider name of dept & individual person's name
+                                        </div>
+                                        <div class="option-price">$9.50</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-secondary" type="button" onclick="prevSection(3)">Back</button>
+                            <button class="btn btn-primary" type="button" onclick="nextSection(3)" id="next3"
+                                disabled>Continue</button>
+                        </div>
+                    </section>
+
+                    <!-- Section 4: Personalization Details -->
+                    <section class="section" id="section4" aria-labelledby="section4-title">
+                        <h2 class="section-title" id="section4-title">Personalization, Sizing & Quantities</h2>
+
+                        <div id="personalizationItems">
+                            <!-- Dynamic items will be added here -->
+                        </div>
+
+                        <button class="add-another-btn" type="button" onclick="addPersonalizationItem()">
+                            + Add Another Person
+                        </button>
+
+                        <div class="button-group">
+                            <button class="btn btn-secondary" type="button" onclick="prevSection(4)">Back</button>
+                            <button class="btn btn-primary" type="button" onclick="nextSection(4)" id="next4">Review
+                                Order</button>
+                        </div>
+                    </section>
+
+                    <!-- Section 5: Review & Checkout -->
+                    <section class="section" id="section5" aria-labelledby="section5-title">
+                        <h2 class="section-title" id="section5-title">Review Your Order</h2>
+
+                        <div class="order-summary">
+                            <div class="summary-title">Order Details</div>
+                            <div id="orderSummaryContent"></div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 12px;">
+                            <label class="form-label required">Please confirm</label>
+                            <div>
+                                <input type="checkbox" id="confirmChecked"> I confirm I have checked all personalisation
+                                details (spelling etc). BlackDog is not responsible for mistakes made on this order
+                                form.
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 32px;">
+                            <label class="form-label required">Shipping Address</label>
+                            <input type="text" class="text-input" id="shippingAddress"
+                                placeholder="Enter depot address for delivery">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required">Select Shipping Option</label>
+                            <div id="shippingOptions">
+                                <label class="shipping-option" onclick="selectShipping('small', this)">
+                                    <div>
+                                        <input type="radio" name="shipping" value="small">
+                                        <span><strong>Small Postage Bag</strong> (1 shirt)</span>
+                                    </div>
+                                    <span class="price">$15.50</span>
+                                </label>
+                                <label class="shipping-option" onclick="selectShipping('medium', this)">
+                                    <div>
+                                        <input type="radio" name="shipping" value="medium">
+                                        <span><strong>Medium Postage Bag</strong> (2 shirts)</span>
+                                    </div>
+                                    <span class="price">$18.00</span>
+                                </label>
+                                <label class="shipping-option" onclick="selectShipping('large', this)">
+                                    <div>
+                                        <input type="radio" name="shipping" value="large">
+                                        <span><strong>Large Postage Bag</strong> (1 jacket, 1 shirt)</span>
+                                    </div>
+                                    <span class="price">$20.00</span>
+                                </label>
+                                <label class="shipping-option" onclick="selectShipping('xl', this)">
+                                    <div>
+                                        <input type="radio" name="shipping" value="xl">
+                                        <span><strong>XL Postage Bag</strong> (2 jackets)</span>
+                                    </div>
+                                    <span class="price">$25.00</span>
+                                </label>
+                                <label class="shipping-option" onclick="selectShipping('freight', this)">
+                                    <div>
+                                        <input type="radio" name="shipping" value="freight">
+                                        <span><strong>Local Freight</strong> per box/satchel to Buller St PMQ</span>
+                                    </div>
+                                    <span class="price">$12.00</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="order-summary">
+                            <div class="summary-total">
+                                <span>Order Total:</span>
+                                <span id="finalTotal" class="price">$0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-secondary" type="button" onclick="prevSection(5)">Back</button>
+                            <button class="btn btn-success" type="button" onclick="addToCart()">Add to Cart</button>
+                        </div>
+
+                        <div style="margin-top: 24px; text-align: center;">
+                            <button class="btn btn-primary" type="button" onclick="addAnotherGarment()"
+                                style="display: none;" id="addAnotherBtn">+ Add Another Garment to Order</button>
+                        </div>
+                    </section>
+
+                </div>
+            </form>
+        </main>
+    </div>
+    <script src="script.js"></script>
+
+</body>
+
+</html>

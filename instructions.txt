@@ -1,0 +1,249 @@
+Here's the list of the depot
+
+ADDRESS LINE 1	SUBURB	STATE 	POSTCODE
+174 NORTH STREET	ALBURY	NSW	2640
+32-56 GALLOWAY STREET	ARMIDALE	NSW	2350
+41 CANAL ROAD	BALLINA	NSW	2478
+130 KERRISONS LANE	BEGA	NSW	2550
+4 LAWSON STREET	BLAYNEY	NSW	2799
+55 FORBES STREET	BOMBALA	NSW	2580
+37 GILLAMATONG LANE	BRAIDWOOD	NSW	2622
+610 WOLFRAM STREET	BROKEN HILL	NSW	2390
+41 CORBETT AVENUE	BURONGA	NSW	2739
+1-7 POLO FLATE ROAD	COOMA	NSW	2630
+30 MCINTOSH ROAD	CROOKWELL	NSW	2583
+401-417 CALIMO STREET	DENILIQUIN	NSW	2705
+17 HAWTHORN STREET	DUBBO	NSW	2830
+23 HAWTHORN STREET	DUBBO	NSW	2830
+59-87 HAMMOND AVE	EAST WAGGA WAGGA	NSW 	2650
+10 RICHMOND AVENUE	FAIRBAIRN	ATC	2609
+25-27 MEMORIAL ROAD	GOULBURN	NSW	2580
+112 QUEEN STREET	GRAFTON	NSW	2460
+187 LAWRENCE ROAD	GRAFTON	NSW	2460
+91 SALEYARDS ROAD	HARDEN	NSW	2587
+25 BURTENSHAW ROAD	INVERELL	NSW	2360
+21 HAMPDEN PARK ROAD	KELSO	NSW	2795
+82 WEST STREET	KEMPSEY	NSW	2440
+11 CRAIG STREET	KYOGLE	NSW	2474
+7 BRADY WAY	LEETON	NSW	2705
+26 PAPERBARK DRIVE	MACLEAN	NSW	2463
+43 WATSON STREET	MOLONG	NSW	2866
+210 ARALUEN ROAD	MORUYA	NSW	2537
+22 BURRUNDULLA ROAD	MUDGEE	NSW	2850
+1 LOGAN STREET	NARRABRI	NSW	2390
+48 NYMAGEE STREET	NARROMINE	NSW	2821
+10 FORGE DRIVE	NORTH BOAMBEE VALLEY COFFS HARBOUR	NSW	2450
+6 DERRIBONG STREET	NYNGAN	NSW	2825
+2 LORDS PLACE	ORANGE	NSW	2800
+61-77 BROLGAN ROAD	PARKES	NSW	2870
+8 BULLER STREET	PORT MACQUARIE	NSW	2444
+115 HINDMAN STREET 	PORT MACQUARIE	NSW	2444
+2 DUKE STREET 	QUIRINDI	NSW	2343
+244 UNION STREET	SOUTH LISMORE	NSW	2480
+16/227 ELIZABETH STREET	SYDNEY	NSW	2000
+2A ELECTRA STREET	TAMWORTH	NSW	2340
+38 WHITBREAD STREET	TAREE	NSW	2430
+26 CADELL STREET	TEXAS	QLD	4385
+41-53 MERIVALE STREE	TUMUT	NSW	2720
+39 SUNSHINE AVENUE	TWEEDS HEAD SOUTH	NSW	2486
+345 BOOROWA STREET	YOUNG	NSW	2594
+
+
+Can we please arrange them in alphabetical order via the suburb category in this file. For suburbs that have more than one depot just add the street name in brackets next to the depot name please
+
+These are the garments:
+Mens Polo 1065 (XS - 5XL)
+Mens Polo JB210 (6XL - 10XL)
+Ladies Polo JH201W (XS-2XL)
+Ladies Polo 1165 (20 - 26)
+Podium Unisex Tech Jacket (2XS - 5XL)
+Mens Olympus Softshell Jacket (S - 8XL)
+Ladies Olympus Softshell Jacket (8 - 26)
+
+I will send through size guides for these garments. Are we able to add them in a lightbox or perhaps we can add them to the website and put a link on the form.
+
+JACKET PRICE LIST 2025
+BLACKDOG INK PTY LTD
+2/20 Janola Cct, Port Macquarie
+NSW, 2444
+02 5514 0760
+info@blackdogink.com.au						View size guides HERE
+
+
+OLYMPUS SOFTSHELL JACKET
+NAVY | MENS - 5313 
+LADIES - 2513 
+OLYMPUS 
+SOFTSHELL
+SIZES
+SIZES
+ORDER QUANTITY
+S-5XL, 8-22
+6XL-8XL, 24-26
+1-24
+$68.00
+$73.50
+25-49
+$64.50
+$69.85
+50-99
+$62.90
+$68.00
+100+
+$57.80
+$62.50
+
+
+
+
+
+
+
+
+
+
+
+Prices exclude GST
+
+
+
+PODIUM TECH JACKET
+NAVY | ADULTS - 3TEJ - UNISEX FIT
+PODIUM TECH
+JACKET
+SIZES
+ORDER QUANTITY
+2XS-5XL
+1-24
+$93.00
+25-49
+$88.35
+50-99
+$86.00
+100+
+$79.10
+
+
+
+
+
+
+
+
+
+
+
+Prices exclude GST
+
+
+
+DECORATIONS
+
+ITEM
+RATE
+Digitising set up fee for any logo
+$60.00
+Embroider
+Logo only - RHC
+$9.50
+Embroider
+Logo + Individual person’s name - LHC
+$12.00
+Embroider
+Individual person’s name only - RHC
+$8.00
+Embroider
+Name of department only
+$8.50
+Embroider
+Individual person’s name & name of department
+$9.50
+
+Prices exclude GST
+
+
+SHIPPING
+
+Shipping Type
+Rate
+Small Postage Bag (Single Polo)
+$15.50
+Medium Postage Bag (Up to 2 Polos)
+$18.00
+Large Postage Bag (Up to 4 Polos)
+$20.00
+XL Postage Bag (Jacket or up to 6 Polos)
+$25.00
+Local Freight per box/satchel to Buller St PMQ
+$12.00
+
+Prices exclude GST
+
+
+
+[23:27, 10/02/2026] Mr West✨️: Size guide
+[23:27, 10/02/2026] Mr West✨️: On the form where it currently says "Select Department" We need to change it to say "Cost Centre" and make it a mandatory short answer text response. We also need to add in brackets (if you are unsure please ask your supervisor).
+[23:28, 10/02/2026] Mr West✨️: On the Review Your Order page it needs to have a summary of all the personalisations, have them itemised and an option to go back and edit individual personalisations from this page. There also needs to be a disclaimer that they have checked all the information is correct, spelling etc and that BlackDog is not responsible for mistakes made on this order form.
+
+DEPARTMENT	DEPT ONLY	W/NAME	APPROVED
+Asset and Operational Excellence	FALSE	TRUE	TRUE
+Asset Engineering	FALSE	TRUE	TRUE
+Assets & Operations Management	FALSE	TRUE	TRUE
+Coastal Operations	FALSE	TRUE	TRUE
+Commercial Design	FALSE	TRUE	TRUE
+Commercial Services	TRUE	TRUE	TRUE
+Contestable Network Solutions	FALSE	TRUE	TRUE
+Contract Management Capability Program	FALSE	TRUE	TRUE
+Customer & Commerical	FALSE	TRUE	TRUE
+Design Services	TRUE	TRUE	TRUE
+Devops	TRUE	FALSE	TRUE
+Digital Asset Management 	FALSE	TRUE	TRUE
+Digital Delivery	FALSE	TRUE	TRUE
+Digital Services	TRUE	TRUE	TRUE
+Electric Vehicle Transition	FALSE	TRUE	TRUE
+Electrical Safety Office	FALSE	TRUE	TRUE
+Finance Division	FALSE	TRUE	TRUE
+Fleet Team	TRUE	FALSE	TRUE
+Frontline Mobility	TRUE	TRUE	TRUE
+Future Networks	FALSE	TRUE	TRUE
+Governance & Corporate Services 	FALSE	TRUE	TRUE
+Graduate Program	TRUE	FALSE	TRUE
+Innovation Team	FALSE	TRUE	TRUE
+Inventory & Logistics	TRUE	TRUE	TRUE
+Learning & Capability	FALSE	TRUE	TRUE
+Location + Midnorth Coast Operations	FALSE	TRUE	TRUE
+Major Projects and Transmission	TRUE	TRUE	TRUE
+Major Projects and Transmission Services	FALSE	TRUE	TRUE
+Meter 2 Cash	FALSE	TRUE	TRUE
+Midnorth Coast Operations	FALSE	TRUE	TRUE
+MSM Team	FALSE	TRUE	TRUE
+Murray Operations	FALSE	TRUE	TRUE
+Network Design	FALSE	TRUE	TRUE
+Network Development	FALSE	TRUE	TRUE
+Network Investment and Maintenance	TRUE	FALSE	TRUE
+Network Planning 	FALSE	TRUE	TRUE
+Network Planning and Development	TRUE	TRUE	TRUE
+Network Services	TRUE	TRUE	TRUE
+Network Substation and Design	FALSE	TRUE	TRUE
+North West Operations	FALSE	TRUE	TRUE
+Operational Services	FALSE	TRUE	TRUE
+Operations 	FALSE	TRUE	TRUE
+Outage Management Group	TRUE	FALSE	TRUE
+People & Safety	FALSE	TRUE	TRUE
+People Operations and Planning	FALSE	TRUE	TRUE
+Portfolio Services	TRUE	FALSE	TRUE
+Procurement	TRUE	TRUE	TRUE
+Property	FALSE	TRUE	TRUE
+Riverina Slopes	FALSE	TRUE	TRUE
+South Eastern Operations 	FALSE	TRUE	TRUE
+Strategy and Future Networks	FALSE	TRUE	TRUE
+Telbu	FALSE	TRUE	TRUE
+Transmission Services	FALSE	TRUE	TRUE
+Vegatation Operations	FALSE	TRUE	TRUE
+Works Delivery & Specilised Services	FALSE	TRUE	TRUE
+Zone Substation Engineering	FALSE	TRUE	TRUE
+
+
+[23:28, 10/02/2026] Mr West✨️: This is the list of approved departments. We need to add an "Other (please note - you will need prior approval if your department is not listed)"
+[23:28, 10/02/2026] Mr West✨️: We also need to add a similar option for Depots - "Other (please note - you will need prior approval if your depot is not listed)"
+[23:29, 10/02/2026] Mr West✨️: The jacket price list also has the correct shipping information.
