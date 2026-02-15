@@ -238,6 +238,11 @@
                             </select>
                         </div>
 
+                        <!-- Single unit price display -->
+                        <div class="form-group" id="priceDisplayGroup" style="display: none;">
+                            <label class="form-label">Unit Price</label>
+                            <input type="text" id="garmentPriceInput" class="text-input" readonly />
+                        </div>
                         <div class="button-group">
                             <button class="btn btn-secondary" type="button" onclick="prevSection(2)">Back</button>
                             <button class="btn btn-primary" type="button" onclick="nextSection(2)" id="next2"
@@ -252,39 +257,63 @@
                         <div class="form-group">
                             <label class="form-label required">Select decoration option</label>
                             <div class="radio-group">
-                                <label class="radio-option" onclick="selectDecoration('name-only', this)">
-                                    <input type="radio" name="decoration" value="name-only">
-                                    <div class="option-details">
-                                        <div class="option-title">Embroider individual person's name only (RHC)</div>
-                                        <div class="option-price">$8.00</div>
-                                    </div>
-                                </label>
-                                <label class="radio-option" onclick="selectDecoration('logo-name', this)">
-                                    <input type="radio" name="decoration" value="logo-name">
-                                    <div class="option-details">
-                                        <div class="option-title">Embroider logo & individual person's name (RHC)</div>
-                                        <div class="option-price">$12.00</div>
-                                    </div>
-                                </label>
+                                <!-- <div style="margin-bottom:8px;">
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                        <input type="checkbox" id="digitisingCheckbox"
+                                            onchange="toggleDigitising(this.checked)">
+                                        <div>
+                                            <div class="option-title"></div>
+                                            <div class="option-price"></div>
+                                        </div>
+                                    </label>
+                                </div> -->
+
                                 <label class="radio-option" onclick="selectDecoration('logo-only', this)">
                                     <input type="radio" name="decoration" value="logo-only">
                                     <div class="option-details">
-                                        <div class="option-title">Embroider logo only (RHC)</div>
+                                        <div class="option-title">Digitising set up fee for any logo</div>
+                                        <div class="option-price">$60.00</div>
+                                    </div>
+                                </label>
+
+                                <label class="radio-option" onclick="selectDecoration('logo-only', this)">
+                                    <input type="radio" name="decoration" value="logo-only">
+                                    <div class="option-details">
+                                        <div class="option-title">Embroider - Logo only (RHC)</div>
                                         <div class="option-price">$9.50</div>
                                     </div>
                                 </label>
+
+                                <label class="radio-option" onclick="selectDecoration('logo-name', this)">
+                                    <input type="radio" name="decoration" value="logo-name">
+                                    <div class="option-details">
+                                        <div class="option-title">Embroider - Logo + Individual person’s name (LHC)
+                                        </div>
+                                        <div class="option-price">$12.00</div>
+                                    </div>
+                                </label>
+
+                                <label class="radio-option" onclick="selectDecoration('name-only', this)">
+                                    <input type="radio" name="decoration" value="name-only">
+                                    <div class="option-details">
+                                        <div class="option-title">Embroider - Individual person’s name only (RHC)</div>
+                                        <div class="option-price">$8.00</div>
+                                    </div>
+                                </label>
+
                                 <label class="radio-option" onclick="selectDecoration('dept-only', this)">
                                     <input type="radio" name="decoration" value="dept-only">
                                     <div class="option-details">
-                                        <div class="option-title">Embroider name of department only</div>
+                                        <div class="option-title">Embroider - Name of department only</div>
                                         <div class="option-price">$8.50</div>
                                     </div>
                                 </label>
+
                                 <label class="radio-option" onclick="selectDecoration('dept-name', this)">
                                     <input type="radio" name="decoration" value="dept-name">
                                     <div class="option-details">
-                                        <div class="option-title">Embroider name of dept & individual person's name
-                                        </div>
+                                        <div class="option-title">Embroider - Individual person’s name & name of
+                                            department</div>
                                         <div class="option-price">$9.50</div>
                                     </div>
                                 </label>
