@@ -864,17 +864,18 @@ function addPersonalizationItem() {
   ) {
     // Build size options based on selected garment
     let sizeOptionsHTML = '<option value="">Select size...</option>';
-    if (orderData.garmentSizes && Array.isArray(orderData.garmentSizes)) {
-      orderData.garmentSizes.forEach((size) => {
-        sizeOptionsHTML += `<option value="${size}">${size}</option>`;
-      });
-    } else {
-      // Default size options if no garment is selected yet
-      const defaultSizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL"];
-      defaultSizes.forEach((size) => {
-        sizeOptionsHTML += `<option value="${size}">${size}</option>`;
-      });
-    }
+    // if (orderData.garmentSizes && Array.isArray(orderData.garmentSizes)) {
+    //   orderData.garmentSizes.forEach((size) => {
+    //     sizeOptionsHTML += `<option value="${size}">${size}</option>`;
+    //   });
+    // } else {
+    // Default size options if no garment is selected yet
+    const defaultSizes = ["8-22", "S-5XL", "24-26", "6X-8XL"];
+
+    defaultSizes.forEach((size) => {
+      sizeOptionsHTML += `<option value="${size}">${size}</option>`;
+    });
+    // }
 
     sizeFieldHTML = `
       <div class="form-group">
