@@ -81,9 +81,10 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label required">Choose your depot</label>
+                            <label class="form-label required">Cost Centre <span style="font-weight:400;">(if you are
+                                    unsure please ask your supervisor)</span></label>
                             <select class="select-input" id="depot" onchange="selectDepot()">
-                                <option value="">Select depot...</option>
+                                <option value="">Select cost centre...</option>
                                 <option value="174 NORTH STREET|ALBURY|NSW|2640">Albury (174 North Street)</option>
                                 <option value="32-56 GALLOWAY STREET|ARMIDALE|NSW|2350">Armidale (32-56 Galloway Street)
                                 </option>
@@ -157,10 +158,77 @@
                         </div>
 
                         <div class="form-group" id="deptSelectSection1" style="display: none;">
-                            <label class="form-label required">Cost Centre <span style="font-weight:400;">(if you are
+                            <label class="form-label required">Department Name <span style="font-weight:400;">(if you
+                                    are
                                     unsure please ask your supervisor)</span></label>
-                            <input type="text" id="costCentre" class="text-input"
-                                placeholder="Enter cost centre (required)" />
+                            <select class="select-input" id="departmentSelect" onchange="selectDepartment()">
+                                <option value="">Select department...</option>
+                                <option value="Asset and Operational Excellence">Asset and Operational Excellence
+                                </option>
+                                <option value="Asset Engineering">Asset Engineering</option>
+                                <option value="Assets & Operations Management">Assets & Operations Management</option>
+                                <option value="Coastal Operations">Coastal Operations</option>
+                                <option value="Commercial Design">Commercial Design</option>
+                                <option value="Commercial Services">Commercial Services</option>
+                                <option value="Contestable Network Solutions">Contestable Network Solutions</option>
+                                <option value="Contract Management Capability Program">Contract Management Capability
+                                    Program</option>
+                                <option value="Customer & Commerical">Customer & Commerical</option>
+                                <option value="Design Services">Design Services</option>
+                                <option value="Devops">Devops</option>
+                                <option value="Digital Asset Management">Digital Asset Management</option>
+                                <option value="Digital Delivery">Digital Delivery</option>
+                                <option value="Digital Services">Digital Services</option>
+                                <option value="Electric Vehicle Transition">Electric Vehicle Transition</option>
+                                <option value="Electrical Safety Office">Electrical Safety Office</option>
+                                <option value="Finance Division">Finance Division</option>
+                                <option value="Fleet Team">Fleet Team</option>
+                                <option value="Frontline Mobility">Frontline Mobility</option>
+                                <option value="Future Networks">Future Networks</option>
+                                <option value="Governance & Corporate Services">Governance & Corporate Services</option>
+                                <option value="Graduate Program">Graduate Program</option>
+                                <option value="Innovation Team">Innovation Team</option>
+                                <option value="Inventory & Logistics">Inventory & Logistics</option>
+                                <option value="Learning & Capability">Learning & Capability</option>
+                                <option value="Location + Midnorth Coast Operations">Location + Midnorth Coast
+                                    Operations</option>
+                                <option value="Major Projects and Transmission">Major Projects and Transmission</option>
+                                <option value="Major Projects and Transmission Services">Major Projects and Transmission
+                                    Services</option>
+                                <option value="Meter 2 Cash">Meter 2 Cash</option>
+                                <option value="Midnorth Coast Operations">Midnorth Coast Operations</option>
+                                <option value="MSM Team">MSM Team</option>
+                                <option value="Murray Operations">Murray Operations</option>
+                                <option value="Network Design">Network Design</option>
+                                <option value="Network Development">Network Development</option>
+                                <option value="Network Investment and Maintenance">Network Investment and Maintenance
+                                </option>
+                                <option value="Network Planning">Network Planning</option>
+                                <option value="Network Planning and Development">Network Planning and Development
+                                </option>
+                                <option value="Network Services">Network Services</option>
+                                <option value="Network Substation and Design">Network Substation and Design</option>
+                                <option value="North West Operations">North West Operations</option>
+                                <option value="Operational Services">Operational Services</option>
+                                <option value="Operations">Operations</option>
+                                <option value="Outage Management Group">Outage Management Group</option>
+                                <option value="People & Safety">People & Safety</option>
+                                <option value="People Operations and Planning">People Operations and Planning</option>
+                                <option value="Portfolio Services">Portfolio Services</option>
+                                <option value="Procurement">Procurement</option>
+                                <option value="Property">Property</option>
+                                <option value="Riverina Slopes">Riverina Slopes</option>
+                                <option value="South Eastern Operations">South Eastern Operations</option>
+                                <option value="Strategy and Future Networks">Strategy and Future Networks</option>
+                                <option value="Telbu">Telbu</option>
+                                <option value="Transmission Services">Transmission Services</option>
+                                <option value="Vegatation Operations">Vegatation Operations</option>
+                                <option value="Works Delivery & Specilised Services">Works Delivery & Specilised
+                                    Services</option>
+                                <option value="Zone Substation Engineering">Zone Substation Engineering</option>
+                                <option value="other">Other (please note - you will need prior approval if your
+                                    department is not listed)</option>
+                            </select>
                         </div>
 
                         <div class="button-group">
@@ -257,47 +325,28 @@
                         <div class="form-group">
                             <label class="form-label required">Select decoration option</label>
                             <div class="radio-group">
-                                <!-- <div style="margin-bottom:8px;">
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                                        <input type="checkbox" id="digitisingCheckbox"
-                                            onchange="toggleDigitising(this.checked)">
-                                        <div>
-                                            <div class="option-title"></div>
-                                            <div class="option-price"></div>
-                                        </div>
-                                    </label>
-                                </div> -->
-
-                                <label class="radio-option" onclick="selectDecoration('logo-only', this)">
-                                    <input type="radio" name="decoration" value="logo-only">
-                                    <div class="option-details">
-                                        <div class="option-title">Digitising set up fee for any logo</div>
-                                        <div class="option-price">$60.00</div>
-                                    </div>
-                                </label>
-
                                 <label class="radio-option" onclick="selectDecoration('logo-only', this)">
                                     <input type="radio" name="decoration" value="logo-only">
                                     <div class="option-details">
                                         <div class="option-title">Embroider - Logo only (RHC)</div>
-                                        <div class="option-price">$9.50</div>
+                                        <!-- <div class="option-price">$9.50</div> -->
                                     </div>
                                 </label>
 
                                 <label class="radio-option" onclick="selectDecoration('logo-name', this)">
                                     <input type="radio" name="decoration" value="logo-name">
                                     <div class="option-details">
-                                        <div class="option-title">Embroider - Logo + Individual person’s name (LHC)
+                                        <div class="option-title">Embroider - Logo + Individual person's name (LHC)
                                         </div>
-                                        <div class="option-price">$12.00</div>
+                                        <!-- <div class="option-price">$12.00</div> -->
                                     </div>
                                 </label>
 
                                 <label class="radio-option" onclick="selectDecoration('name-only', this)">
                                     <input type="radio" name="decoration" value="name-only">
                                     <div class="option-details">
-                                        <div class="option-title">Embroider - Individual person’s name only (RHC)</div>
-                                        <div class="option-price">$8.00</div>
+                                        <div class="option-title">Embroider - Individual person's name only (RHC)</div>
+                                        <!-- <div class="option-price">$8.00</div> -->
                                     </div>
                                 </label>
 
@@ -305,19 +354,40 @@
                                     <input type="radio" name="decoration" value="dept-only">
                                     <div class="option-details">
                                         <div class="option-title">Embroider - Name of department only</div>
-                                        <div class="option-price">$8.50</div>
+                                        <!-- <div class="option-price">$8.50</div> -->
                                     </div>
                                 </label>
 
                                 <label class="radio-option" onclick="selectDecoration('dept-name', this)">
                                     <input type="radio" name="decoration" value="dept-name">
                                     <div class="option-details">
-                                        <div class="option-title">Embroider - Individual person’s name & name of
+                                        <div class="option-title">Embroider - Individual person's name & name of
                                             department</div>
-                                        <div class="option-price">$9.50</div>
+                                        <!-- <div class="option-price">$9.50</div> -->
                                     </div>
                                 </label>
                             </div>
+                        </div>
+
+                        <!-- Logo selection dropdown (shown only for logo-based decorations) -->
+                        <div class="form-group" id="logoSelectionGroup" style="display: none;">
+                            <label class="form-label required">Select Logo</label>
+                            <select class="select-input" id="logoSelect" onchange="selectLogo(this.value)">
+                                <option value="">Select logo...</option>
+                                <option value="nsw-government">NSW Government</option>
+                                <option value="essential-energy">Essential Energy</option>
+                                <option value="transport">Transport for NSW</option>
+                                <option value="sydney-trains">Sydney Trains</option>
+                                <option value="nsw-trains">NSW TrainLink</option>
+                                <option value="roads-maritime">Transport for NSW (Roads & Maritime)</option>
+                                <option value="service-nsw">Service NSW</option>
+                                <option value="health-nsw">NSW Health</option>
+                                <option value="education-nsw">NSW Department of Education</option>
+                                <option value="other">Other (please contact your cost centre)</option>
+                            </select>
+                            <p style="margin-top: 8px; font-size: 14px; color: #64748b; font-style: italic;">
+                                If your logo is not listed here please contact your cost centre
+                            </p>
                         </div>
 
                         <div class="button-group">
