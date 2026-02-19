@@ -390,6 +390,80 @@
                             </p>
                         </div>
 
+                        <!-- Name input field (shown for logo-name, name-only, dept-name) -->
+                        <div class="form-group" id="nameInputGroup" style="display: none;">
+                            <label class="form-label required">Individual Person's Name</label>
+                            <input type="text" class="text-input" id="decorationNameInput" placeholder="Enter person's name" oninput="saveDecorationName(this.value)">
+                            <p style="margin-top: 8px; font-size: 13px; color: #64748b; font-style: italic;">
+                                ⚠️ All garment individualisations have been approved by the relevant cost centre. BlackDog Ink takes no responsibility for un-approved customisations ie: nicknames, abbreviated names etc.
+                            </p>
+                        </div>
+
+                        <!-- Department selection dropdown (shown for dept-only, dept-name) -->
+                        <div class="form-group" id="deptSelectionGroup" style="display: none;">
+                            <label class="form-label required">Select Department</label>
+                            <select class="select-input" id="decorationDeptSelect" onchange="saveDecorationDepartment(this.value)">
+                                <option value="">Select department...</option>
+                                <option value="Asset and Operational Excellence">Asset and Operational Excellence</option>
+                                <option value="Asset Engineering">Asset Engineering</option>
+                                <option value="Assets & Operations Management">Assets & Operations Management</option>
+                                <option value="Coastal Operations">Coastal Operations</option>
+                                <option value="Commercial Design">Commercial Design</option>
+                                <option value="Commercial Services">Commercial Services</option>
+                                <option value="Contestable Network Solutions">Contestable Network Solutions</option>
+                                <option value="Contract Management Capability Program">Contract Management Capability Program</option>
+                                <option value="Customer & Commerical">Customer & Commerical</option>
+                                <option value="Design Services">Design Services</option>
+                                <option value="Devops">Devops</option>
+                                <option value="Digital Asset Management">Digital Asset Management</option>
+                                <option value="Digital Delivery">Digital Delivery</option>
+                                <option value="Digital Services">Digital Services</option>
+                                <option value="Electric Vehicle Transition">Electric Vehicle Transition</option>
+                                <option value="Electrical Safety Office">Electrical Safety Office</option>
+                                <option value="Finance Division">Finance Division</option>
+                                <option value="Fleet Team">Fleet Team</option>
+                                <option value="Frontline Mobility">Frontline Mobility</option>
+                                <option value="Future Networks">Future Networks</option>
+                                <option value="Governance & Corporate Services">Governance & Corporate Services</option>
+                                <option value="Graduate Program">Graduate Program</option>
+                                <option value="Innovation Team">Innovation Team</option>
+                                <option value="Inventory & Logistics">Inventory & Logistics</option>
+                                <option value="Learning & Capability">Learning & Capability</option>
+                                <option value="Location + Midnorth Coast Operations">Location + Midnorth Coast Operations</option>
+                                <option value="Major Projects and Transmission">Major Projects and Transmission</option>
+                                <option value="Major Projects and Transmission Services">Major Projects and Transmission Services</option>
+                                <option value="Meter 2 Cash">Meter 2 Cash</option>
+                                <option value="Midnorth Coast Operations">Midnorth Coast Operations</option>
+                                <option value="MSM Team">MSM Team</option>
+                                <option value="Murray Operations">Murray Operations</option>
+                                <option value="Network Design">Network Design</option>
+                                <option value="Network Development">Network Development</option>
+                                <option value="Network Investment and Maintenance">Network Investment and Maintenance</option>
+                                <option value="Network Planning">Network Planning</option>
+                                <option value="Network Planning and Development">Network Planning and Development</option>
+                                <option value="Network Services">Network Services</option>
+                                <option value="Network Substation and Design">Network Substation and Design</option>
+                                <option value="North West Operations">North West Operations</option>
+                                <option value="Operational Services">Operational Services</option>
+                                <option value="Operations">Operations</option>
+                                <option value="Outage Management Group">Outage Management Group</option>
+                                <option value="People & Safety">People & Safety</option>
+                                <option value="People Operations and Planning">People Operations and Planning</option>
+                                <option value="Portfolio Services">Portfolio Services</option>
+                                <option value="Procurement">Procurement</option>
+                                <option value="Property">Property</option>
+                                <option value="Riverina Slopes">Riverina Slopes</option>
+                                <option value="South Eastern Operations">South Eastern Operations</option>
+                                <option value="Strategy and Future Networks">Strategy and Future Networks</option>
+                                <option value="Telbu">Telbu</option>
+                                <option value="Transmission Services">Transmission Services</option>
+                                <option value="Vegatation Operations">Vegatation Operations</option>
+                                <option value="Works Delivery & Specilised Services">Works Delivery & Specilised Services</option>
+                                <option value="Zone Substation Engineering">Zone Substation Engineering</option>
+                                <option value="other">Other (please note - you will need prior approval if your department is not listed)</option>
+                            </select>
+                        </div>
+
                         <div class="button-group">
                             <button class="btn btn-secondary" type="button" onclick="prevSection(3)">Back</button>
                             <button class="btn btn-primary" type="button" onclick="nextSection(3)" id="next3"

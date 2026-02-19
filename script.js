@@ -8,6 +8,8 @@ let orderData = {
   decoration: "",
   decorationPrice: 0,
   logo: "",
+  decorationName: "",
+  decorationDepartment: "",
   personalizationItems: [],
   shipping: "",
   shippingPrice: 0,
@@ -79,18 +81,6 @@ let personalizationCount = 0;
 
 // Section navigation
 function nextSection(current) {
-  // Validate section 3 (decoration) - check logo selection if needed
-  if (current === 3) {
-    const decoration = orderData.decoration;
-    if (decoration === "logo-only" || decoration === "logo-name") {
-      const logoSelect = document.getElementById("logoSelect");
-      if (!logoSelect.value) {
-        alert("Please select a logo before continuing");
-        return;
-      }
-    }
-  }
-
   document.getElementById(`section${current}`).classList.remove("active");
   document.getElementById(`step${current}`).classList.remove("active");
   document.getElementById(`step${current}`).classList.add("completed");
@@ -445,22 +435,94 @@ function selectDecoration(decoration, element) {
   });
   element.classList.add("selected");
 
-  // Show/hide logo selection dropdown based on decoration type
+  // Show/hide fields based on decoration type
   const logoSelectionGroup = document.getElementById("logoSelectionGroup");
-  if (decoration === "logo-only" || decoration === "logo-name") {
+  const nameInputGroup = document.getElementById("nameInputGroup");
+  const deptSelectionGroup = document.getElementById("deptSelectionGroup");
+
+  // Reset all fields
+  logoSelectionGroup.style.display = "none";
+  nameInputGroup.style.display = "none";
+  deptSelectionGroup.style.display = "none";
+
+  // Logo only: show logo dropdown
+  if (decoration === "logo-only") {
     logoSelectionGroup.style.display = "block";
-  } else {
-    logoSelectionGroup.style.display = "none";
+  }
+  // Logo + Name: show logo dropdown + name input
+  else if (decoration === "logo-name") {
+    logoSelectionGroup.style.display = "block";
+    nameInputGroup.style.display = "block";
+  }
+  // Name only: show name input only
+  else if (decoration === "name-only") {
+    nameInputGroup.style.display = "block";
+  }
+  // Department only: show department dropdown
+  else if (decoration === "dept-only") {
+    deptSelectionGroup.style.display = "block";
+  }
+  // Department + Name: show department dropdown + name input
+  else if (decoration === "dept-name") {
+    deptSelectionGroup.style.display = "block";
+    nameInputGroup.style.display = "block";
+  }
+
+  // Clear values when switching decoration types
+  if (decoration !== "logo-only" && decoration !== "logo-name") {
     document.getElementById("logoSelect").value = "";
     orderData.logo = "";
   }
+  if (decoration !== "dept-only" && decoration !== "dept-name") {
+    document.getElementById("decorationDeptSelect").value = "";
+    orderData.decorationDepartment = "";
+  }
+  if (decoration !== "logo-name" && decoration !== "name-only" && decoration !== "dept-name") {
+    document.getElementById("decorationNameInput").value = "";
+    orderData.decorationName = "";
+  }
 
-  document.getElementById("next3").disabled = false;
+  validateSection3();
 }
 
 // Logo selection
 function selectLogo(logo) {
   orderData.logo = logo;
+  validateSection3();
+}
+
+// Name input
+function saveDecorationName(name) {
+  orderData.decorationName = name;
+  validateSection3();
+}
+
+// Department selection
+function saveDecorationDepartment(dept) {
+  orderData.decorationDepartment = dept;
+  validateSection3();
+}
+
+// Validate section 3
+function validateSection3() {
+  const decoration = orderData.decoration;
+  let isValid = false;
+
+  if (decoration === "logo-only") {
+    isValid = orderData.logo && orderData.logo !== "";
+  } else if (decoration === "logo-name") {
+    isValid = orderData.logo && orderData.logo !== "" && 
+              orderData.decorationName && orderData.decorationName.trim() !== "";
+  } else if (decoration === "name-only") {
+    isValid = orderData.decorationName && orderData.decorationName.trim() !== "";
+  } else if (decoration === "dept-only") {
+    isValid = orderData.decorationDepartment && orderData.decorationDepartment !== "";
+  } else if (decoration === "dept-name") {
+    isValid = orderData.decorationDepartment && orderData.decorationDepartment !== "" &&
+              orderData.decorationName && orderData.decorationName.trim() !== "";
+  }
+
+  document.getElementById("next3").disabled = !isValid;
 }
 
 // Section 4: Personalization Items
@@ -474,13 +536,11 @@ function addPersonalizationItem() {
   personalizationCount++;
   const container = document.getElementById("personalizationItems");
 
-  const needsDept = orderData.decoration.includes("dept");
-  const needsName =
-    orderData.decoration.includes("name") &&
-    !orderData.decoration.includes("dept-only") &&
-    !orderData.decoration.includes("logo-only");
+  // Determine what fields to show based on decoration type
+  const decoration = orderData.decoration;
+  const needsDept = decoration === "dept-only" || decoration === "dept-name";
 
-  // Build department options
+  // Build department field (only for dept-only and dept-name decorations)
   let deptHTML = "";
   if (needsDept) {
     deptHTML += `<div class="form-group">
@@ -548,12 +608,11 @@ function addPersonalizationItem() {
       </div>`;
   }
 
-  const nameHTML = needsName
-    ? `<div class="form-group">
+  // Name field is always shown for all decoration types
+  const nameHTML = `<div class="form-group">
         <label class="form-label required">Individual Person's Name</label>
         <input type="text" class="text-input" placeholder="Enter name" data-field="name" data-person="${personalizationCount}">
-      </div>`
-    : "";
+      </div>`;
 
   // Build size options based on selected garment
   let sizeOptionsHTML = '<option value="">Select size...</option>';
@@ -871,6 +930,8 @@ function generateOrderSummary() {
   <div class="summary-item"><span>Garment:</span><span><strong>${getGarmentName(orderData.garment)}</strong></span></div>
   <div class="summary-item"><span>Decoration:</span><span><strong>${getDecorationName(orderData.decoration)}</strong></span></div>
   ${orderData.logo ? `<div class="summary-item"><span>Logo:</span><span><strong>${getLogoName(orderData.logo)}</strong></span></div>` : ""}
+  ${orderData.decorationName ? `<div class="summary-item"><span>Name:</span><span><strong>${orderData.decorationName}</strong></span></div>` : ""}
+  ${orderData.decorationDepartment ? `<div class="summary-item"><span>Department:</span><span><strong>${orderData.decorationDepartment}</strong></span></div>` : ""}
   <div class="summary-item"><span>Number of People:</span><span><strong>${orderData.personalizationItems.length}</strong></span></div>
   `;
 
