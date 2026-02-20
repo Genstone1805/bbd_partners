@@ -11,10 +11,10 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1>Custom Garment Order Form</h1>
+            <h1>Essential Energy Garment Order Form</h1>
             <p>Complete your personalized uniform order</p>
             <div style="margin-top:8px;">
-                <a href="#" id="viewSizeGuides">View size guides</a>
+                <a href="#" id="viewSizeGuides" style="color:white">View size guides</a>
             </div>
         </header>
 
@@ -53,9 +53,9 @@
                             <div class="alert-icon">ℹ️</div>
                             <div class="alert-content">
                                 <h3>Important Notice</h3>
-                                <p>This order form works for <strong>one garment & one depot at a time</strong>. You
+                                <p>This order form works for <strong>one depot at a time</strong>. You
                                     will have the option once you've completed to come back and add another
-                                    garment/depot.</p>
+                                    garment for another depot.</p>
                             </div>
                         </div>
 
@@ -393,25 +393,31 @@
                         <!-- Name input field (shown for logo-name, name-only, dept-name) -->
                         <div class="form-group" id="nameInputGroup" style="display: none;">
                             <label class="form-label required">Individual Person's Name</label>
-                            <input type="text" class="text-input" id="decorationNameInput" placeholder="Enter person's name" oninput="saveDecorationName(this.value)">
+                            <input type="text" class="text-input" id="decorationNameInput"
+                                placeholder="Enter person's name" oninput="saveDecorationName(this.value)">
                             <p style="margin-top: 8px; font-size: 13px; color: #64748b; font-style: italic;">
-                                ⚠️ All garment individualisations have been approved by the relevant cost centre. BlackDog Ink takes no responsibility for un-approved customisations ie: nicknames, abbreviated names etc.
+                                ⚠️ All garment individualisations have been approved by the relevant cost centre.
+                                BlackDog Ink takes no responsibility for un-approved customisations ie: nicknames,
+                                abbreviated names etc.
                             </p>
                         </div>
 
                         <!-- Department selection dropdown (shown for dept-only, dept-name) -->
                         <div class="form-group" id="deptSelectionGroup" style="display: none;">
                             <label class="form-label required">Select Department</label>
-                            <select class="select-input" id="decorationDeptSelect" onchange="saveDecorationDepartment(this.value)">
+                            <select class="select-input" id="decorationDeptSelect"
+                                onchange="saveDecorationDepartment(this.value)">
                                 <option value="">Select department...</option>
-                                <option value="Asset and Operational Excellence">Asset and Operational Excellence</option>
+                                <option value="Asset and Operational Excellence">Asset and Operational Excellence
+                                </option>
                                 <option value="Asset Engineering">Asset Engineering</option>
                                 <option value="Assets & Operations Management">Assets & Operations Management</option>
                                 <option value="Coastal Operations">Coastal Operations</option>
                                 <option value="Commercial Design">Commercial Design</option>
                                 <option value="Commercial Services">Commercial Services</option>
                                 <option value="Contestable Network Solutions">Contestable Network Solutions</option>
-                                <option value="Contract Management Capability Program">Contract Management Capability Program</option>
+                                <option value="Contract Management Capability Program">Contract Management Capability
+                                    Program</option>
                                 <option value="Customer & Commerical">Customer & Commerical</option>
                                 <option value="Design Services">Design Services</option>
                                 <option value="Devops">Devops</option>
@@ -429,18 +435,22 @@
                                 <option value="Innovation Team">Innovation Team</option>
                                 <option value="Inventory & Logistics">Inventory & Logistics</option>
                                 <option value="Learning & Capability">Learning & Capability</option>
-                                <option value="Location + Midnorth Coast Operations">Location + Midnorth Coast Operations</option>
+                                <option value="Location + Midnorth Coast Operations">Location + Midnorth Coast
+                                    Operations</option>
                                 <option value="Major Projects and Transmission">Major Projects and Transmission</option>
-                                <option value="Major Projects and Transmission Services">Major Projects and Transmission Services</option>
+                                <option value="Major Projects and Transmission Services">Major Projects and Transmission
+                                    Services</option>
                                 <option value="Meter 2 Cash">Meter 2 Cash</option>
                                 <option value="Midnorth Coast Operations">Midnorth Coast Operations</option>
                                 <option value="MSM Team">MSM Team</option>
                                 <option value="Murray Operations">Murray Operations</option>
                                 <option value="Network Design">Network Design</option>
                                 <option value="Network Development">Network Development</option>
-                                <option value="Network Investment and Maintenance">Network Investment and Maintenance</option>
+                                <option value="Network Investment and Maintenance">Network Investment and Maintenance
+                                </option>
                                 <option value="Network Planning">Network Planning</option>
-                                <option value="Network Planning and Development">Network Planning and Development</option>
+                                <option value="Network Planning and Development">Network Planning and Development
+                                </option>
                                 <option value="Network Services">Network Services</option>
                                 <option value="Network Substation and Design">Network Substation and Design</option>
                                 <option value="North West Operations">North West Operations</option>
@@ -458,9 +468,11 @@
                                 <option value="Telbu">Telbu</option>
                                 <option value="Transmission Services">Transmission Services</option>
                                 <option value="Vegatation Operations">Vegatation Operations</option>
-                                <option value="Works Delivery & Specilised Services">Works Delivery & Specilised Services</option>
+                                <option value="Works Delivery & Specilised Services">Works Delivery & Specilised
+                                    Services</option>
                                 <option value="Zone Substation Engineering">Zone Substation Engineering</option>
-                                <option value="other">Other (please note - you will need prior approval if your department is not listed)</option>
+                                <option value="other">Other (please note - you will need prior approval if your
+                                    department is not listed)</option>
                             </select>
                         </div>
 
