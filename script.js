@@ -1388,6 +1388,23 @@ function clearAddToCartErrors() {
   container.classList.remove("is-visible");
 }
 
+let successToastTimer;
+function showSuccessToast(message) {
+  const toast = document.getElementById("successToast");
+  if (!toast) return;
+
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  if (successToastTimer) {
+    clearTimeout(successToastTimer);
+  }
+
+  successToastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2500);
+}
+
 function renderAddToCartErrors(errors) {
   const container = document.getElementById("addOrderErrors");
   if (!container) return;
@@ -1460,6 +1477,7 @@ function addToCart() {
   // Reset form for new order
   resetForm();
   document.getElementById('cartDropdown').style.display = 'none';
+  showSuccessToast("Order added to cart. You can add another order now.");
 }
 
 // Remove order from cart
