@@ -13,8 +13,32 @@
         <header class="header">
             <h1>Essential Energy Garment Order Form</h1>
             <p>Complete your personalized uniform order</p>
-            <div style="margin-top:8px;">
+            <div style="margin-top:8px; display: flex; justify-content: center; align-items: center; gap: 16px;">
                 <a href="#" id="viewSizeGuides" style="color:white">View size guides</a>
+                <!-- Cart Icon -->
+                <div style="position: relative;">
+                    <button id="cartIcon" onclick="toggleCartDropdown()" style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 20px; position: relative;">
+                        🛒
+                        <span id="cartBadge" style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; display: none;">0</span>
+                    </button>
+                    <!-- Cart Dropdown -->
+                    <div id="cartDropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); min-width: 350px; max-height: 500px; overflow-y: auto; z-index: 1000;">
+                        <div style="padding: 16px; border-bottom: 1px solid var(--border);">
+                            <h3 style="margin: 0; color: var(--text);">Your Cart</h3>
+                        </div>
+                        <div id="cartDropdownItems" style="padding: 8px;">
+                            <!-- Cart items will be inserted here -->
+                        </div>
+                        <div id="cartDropdownFooter" style="padding: 16px; border-top: 1px solid var(--border); background: var(--bg-light);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 16px; font-weight: bold;">
+                                <span>Total:</span>
+                                <span id="cartDropdownTotal" class="price">$0.00</span>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="checkout()" style="width: 100%;">Checkout</button>
+                            <button type="button" class="btn btn-secondary" onclick="clearCart()" style="width: 100%; margin-top: 8px;">Clear Cart</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -26,19 +50,11 @@
                 </div>
                 <div class="progress-step" id="step2" role="listitem">
                     <div class="step-circle">2</div>
-                    <div class="step-label">Garment</div>
+                    <div class="step-label">Garment & Decoration</div>
                 </div>
                 <div class="progress-step" id="step3" role="listitem">
                     <div class="step-circle">3</div>
-                    <div class="step-label">Decoration</div>
-                </div>
-                <div class="progress-step" id="step4" role="listitem">
-                    <div class="step-circle">4</div>
-                    <div class="step-label">Details</div>
-                </div>
-                <div class="progress-step" id="step5" role="listitem">
-                    <div class="step-circle">5</div>
-                    <div class="step-label">Review</div>
+                    <div class="step-label">Shipping</div>
                 </div>
             </div>
         </nav>
@@ -249,52 +265,28 @@
 
                         <div class="form-group">
                             <label class="form-label required">Select garment type</label>
-                            <div class="radio-group">
-                                <label class="radio-option" onclick="selectGarment('mens-polo-xs-5xl', this)">
-                                    <input type="radio" name="garment" value="mens-polo-xs-5xl">
-                                    <div class="option-details">
-                                        <div class="option-title">Mens Polo 1065 (XS - 5XL)</div>
-                                    </div>
-                                </label>
-                                <label class="radio-option" onclick="selectGarment('mens-polo-5xl-10xl', this)">
-                                    <input type="radio" name="garment" value="mens-polo-5xl-10xl">
-                                    <div class="option-details">
-                                        <div class="option-title">Mens Polo JB210 (6XL - 10XL)</div>
-                                    </div>
-                                </label>
-                                <label class="radio-option" onclick="selectGarment('womens-polo-xs-2xl', this)">
-                                    <input type="radio" name="garment" value="womens-polo-xs-2xl">
-                                    <div class="option-details">
-                                        <div class="option-title">Ladies Polo JH201W (XS-2XL)</div>
-                                    </div>
-                                </label>
-                                <label class="radio-option" onclick="selectGarment('womens-polo-20-26', this)">
-                                    <input type="radio" name="garment" value="womens-polo-20-26">
-                                    <div class="option-details">
-                                        <div class="option-title">Ladies Polo 1165 (20 - 26)</div>
-                                    </div>
-                                </label>
-                                <label class="radio-option"
-                                    onclick="selectGarment('premium-unisex-tech-jacket-2xl-5xl', this)">
-                                    <input type="radio" name="garment" value="premium-unisex-tech-jacket-2xl-5xl">
-                                    <div class="option-details">
-                                        <div class="option-title">Podium Unisex Tech Jacket (2XS - 5XL)</div>
-                                    </div>
-                                </label>
-                                <label class="radio-option"
-                                    onclick="selectGarment('mens-olympus-softshell-jacket-s-8xl', this)">
-                                    <input type="radio" name="garment" value="mens-olympus-softshell-jacket-s-8xl">
-                                    <div class="option-details">
-                                        <div class="option-title">Mens Olympus Softshell Jacket (S - 8XL)</div>
-                                    </div>
-                                </label>
-                                <label class="radio-option"
-                                    onclick="selectGarment('ladies-olympus-softshell-jacket-8-26', this)">
-                                    <input type="radio" name="garment" value="ladies-olympus-softshell-jacket-8-26">
-                                    <div class="option-details">
-                                        <div class="option-title">Ladies Olympus Softshell Jacket (8 - 26)</div>
-                                    </div>
-                                </label>
+                            <select class="select-input" id="garmentSelect" onchange="selectGarment(this.value)">
+                                <option value="">Select garment...</option>
+                                <option value="mens-polo-xs-5xl">Mens Polo 1065</option>
+                                <option value="mens-polo-5xl-10xl">Mens Polo JB210</option>
+                                <option value="womens-polo-xs-2xl">Ladies Polo JH201W</option>
+                                <option value="womens-polo-20-26">Ladies Polo 1165</option>
+                                <option value="premium-unisex-tech-jacket-2xl-5xl">Podium Unisex Tech Jacket</option>
+                                <option value="mens-olympus-softshell-jacket-s-8xl">Mens Olympus Softshell Jacket
+                                </option>
+                                <option value="ladies-olympus-softshell-jacket-8-26">Ladies Olympus Softshell Jacket
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Size selection and quantity -->
+                        <div class="form-group" id="sizeSelectionGroup" style="display: none;">
+                            <label class="form-label required">Select Size & Quantity</label>
+                            <div class="grid-2">
+                                <select class="select-input" id="sizeSelect" onchange="selectSize(this.value)">
+                                    <option value="">Select size...</option>
+                                </select>
+                                <input type="number" class="number-input" id="quantityInput" min="1" value="1" placeholder="Quantity" oninput="updateQuantity(this.value)">
                             </div>
                         </div>
 
@@ -311,62 +303,18 @@
                             <label class="form-label">Unit Price</label>
                             <input type="text" id="garmentPriceInput" class="text-input" readonly />
                         </div>
-                        <div class="button-group">
-                            <button class="btn btn-secondary" type="button" onclick="prevSection(2)">Back</button>
-                            <button class="btn btn-primary" type="button" onclick="nextSection(2)" id="next2"
-                                disabled>Continue</button>
-                        </div>
-                    </section>
 
-                    <!-- Section 3: Decoration Options -->
-                    <section class="section" id="section3" aria-labelledby="section3-title">
-                        <h2 class="section-title" id="section3-title">Choose Your Decoration</h2>
-
+                        <!-- Decoration option dropdown -->
                         <div class="form-group">
                             <label class="form-label required">Select decoration option</label>
-                            <div class="radio-group">
-                                <label class="radio-option" onclick="selectDecoration('logo-only', this)">
-                                    <input type="radio" name="decoration" value="logo-only">
-                                    <div class="option-details">
-                                        <div class="option-title">Embroider - Logo only (RHC)</div>
-                                        <!-- <div class="option-price">$9.50</div> -->
-                                    </div>
-                                </label>
-
-                                <label class="radio-option" onclick="selectDecoration('logo-name', this)">
-                                    <input type="radio" name="decoration" value="logo-name">
-                                    <div class="option-details">
-                                        <div class="option-title">Embroider - Logo + Individual person's name (LHC)
-                                        </div>
-                                        <!-- <div class="option-price">$12.00</div> -->
-                                    </div>
-                                </label>
-
-                                <label class="radio-option" onclick="selectDecoration('name-only', this)">
-                                    <input type="radio" name="decoration" value="name-only">
-                                    <div class="option-details">
-                                        <div class="option-title">Embroider - Individual person's name only (RHC)</div>
-                                        <!-- <div class="option-price">$8.00</div> -->
-                                    </div>
-                                </label>
-
-                                <label class="radio-option" onclick="selectDecoration('dept-only', this)">
-                                    <input type="radio" name="decoration" value="dept-only">
-                                    <div class="option-details">
-                                        <div class="option-title">Embroider - Name of department only</div>
-                                        <!-- <div class="option-price">$8.50</div> -->
-                                    </div>
-                                </label>
-
-                                <label class="radio-option" onclick="selectDecoration('dept-name', this)">
-                                    <input type="radio" name="decoration" value="dept-name">
-                                    <div class="option-details">
-                                        <div class="option-title">Embroider - Individual person's name & name of
-                                            department</div>
-                                        <!-- <div class="option-price">$9.50</div> -->
-                                    </div>
-                                </label>
-                            </div>
+                            <select class="select-input" id="decorationSelect" onchange="selectDecoration(this.value)">
+                                <option value="">Select decoration...</option>
+                                <option value="logo-only">Embroider - Logo only (RHC)</option>
+                                <option value="logo-name">Embroider - Logo + Individual person's name (LHC)</option>
+                                <option value="name-only">Embroider - Individual person's name only (RHC)</option>
+                                <option value="dept-only">Embroider - Name of department only</option>
+                                <option value="dept-name">Embroider - Individual person's name & name of department</option>
+                            </select>
                         </div>
 
                         <!-- Logo selection dropdown (shown only for logo-based decorations) -->
@@ -477,37 +425,18 @@
                         </div>
 
                         <div class="button-group">
-                            <button class="btn btn-secondary" type="button" onclick="prevSection(3)">Back</button>
-                            <button class="btn btn-primary" type="button" onclick="nextSection(3)" id="next3"
+                            <button class="btn btn-secondary" type="button" onclick="prevSection(2)">Back</button>
+                            <button class="btn btn-primary" type="button" onclick="nextSection(2)" id="next2"
                                 disabled>Continue</button>
                         </div>
                     </section>
 
-                    <!-- Section 4: Personalization Details -->
-                    <section class="section" id="section4" aria-labelledby="section4-title">
-                        <h2 class="section-title" id="section4-title">Personalization, Sizing & Quantities</h2>
-
-                        <div id="personalizationItems">
-                            <!-- Dynamic items will be added here -->
-                        </div>
-
-                        <button class="add-another-btn" type="button" onclick="addPersonalizationItem()">
-                            + Add Another Person
-                        </button>
-
-                        <div class="button-group">
-                            <button class="btn btn-secondary" type="button" onclick="prevSection(4)">Back</button>
-                            <button class="btn btn-primary" type="button" onclick="nextSection(4)" id="next4">Review
-                                Order</button>
-                        </div>
-                    </section>
-
-                    <!-- Section 5: Review & Checkout -->
-                    <section class="section" id="section5" aria-labelledby="section5-title">
-                        <h2 class="section-title" id="section5-title">Review Your Order</h2>
+                    <!-- Section 3: Review & Checkout -->
+                    <section class="section" id="section3" aria-labelledby="section3-title">
+                        <h2 class="section-title" id="section3-title">Review Your Order</h2>
 
                         <div class="order-summary">
-                            <div class="summary-title">Order Details</div>
+                            <div class="summary-title">Current Order Details</div>
                             <div id="orderSummaryContent"></div>
                         </div>
 
@@ -521,6 +450,18 @@
                         </div>
 
                         <div class="form-group" style="margin-top: 32px;">
+                            <label class="form-label required">Name of Delivery</label>
+                            <select class="select-input" id="deliveryNameSelect" required>
+                                <option value="">Select delivery name...</option>
+                                <option value="individual">Individual Person</option>
+                                <option value="department">Department Representative</option>
+                                <option value="manager">Manager</option>
+                                <option value="supervisor">Supervisor</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label required">Shipping Address</label>
                             <input type="text" class="text-input" id="shippingAddress"
                                 placeholder="Enter depot address for delivery">
@@ -574,14 +515,11 @@
                             </div>
                         </div>
 
-                        <div class="button-group">
-                            <button class="btn btn-secondary" type="button" onclick="prevSection(5)">Back</button>
-                            <button class="btn btn-success" type="button" onclick="addToCart()">Add to Cart</button>
-                        </div>
+                        <div id="addOrderErrors" class="add-order-errors" aria-live="polite"></div>
 
-                        <div style="margin-top: 24px; text-align: center;">
-                            <button class="btn btn-primary" type="button" onclick="addAnotherGarment()"
-                                style="display: none;" id="addAnotherBtn">+ Add Another Garment to Order</button>
+                        <div class="button-group">
+                            <button class="btn btn-secondary" type="button" onclick="prevSection(3)">Back</button>
+                            <button class="btn btn-primary" type="button" onclick="addToCart()">Add New Order</button>
                         </div>
                     </section>
 

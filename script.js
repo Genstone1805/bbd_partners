@@ -15,6 +15,95 @@ let orderData = {
   shippingPrice: 0,
 };
 
+// Order cart to store multiple orders (load from localStorage)
+let orderCart = JSON.parse(localStorage.getItem('garmentOrderCart')) || [];
+
+// Initialize cart on page load
+function initCart() {
+  updateCartBadge();
+  renderCartDropdown();
+}
+
+// Save cart to localStorage
+function saveCart() {
+  localStorage.setItem('garmentOrderCart', JSON.stringify(orderCart));
+  updateCartBadge();
+  renderCartDropdown();
+}
+
+// Update cart badge count
+function updateCartBadge() {
+  const badge = document.getElementById('cartBadge');
+  if (orderCart.length > 0) {
+    badge.textContent = orderCart.length;
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Toggle cart dropdown
+function toggleCartDropdown() {
+  const dropdown = document.getElementById('cartDropdown');
+  dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+  if (dropdown.style.display === 'block') {
+    renderCartDropdown();
+  }
+}
+
+// Render cart dropdown
+function renderCartDropdown() {
+  const cartItems = document.getElementById('cartDropdownItems');
+  const cartTotal = document.getElementById('cartDropdownTotal');
+  const cartFooter = document.getElementById('cartDropdownFooter');
+
+  if (orderCart.length === 0) {
+    cartItems.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-light);">Your cart is empty</div>';
+    cartFooter.style.display = 'none';
+    return;
+  }
+
+  cartFooter.style.display = 'block';
+  let cartHTML = '';
+  let total = 0;
+
+  orderCart.forEach((order, index) => {
+    const totalQuantity = order.personalizationItems.reduce(
+      (sum, item) => sum + (item.quantity || 0),
+      0,
+    );
+    const garmentTotal = order.garmentPrice * totalQuantity;
+    const decorationTotal = order.decorationPrice * totalQuantity;
+    const orderTotal = garmentTotal + decorationTotal + order.shippingPrice;
+    total += orderTotal;
+
+    cartHTML += `
+      <div style="padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; background: white;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+          <div style="flex: 1;">
+            <div style="font-weight: bold; color: var(--text); margin-bottom: 4px;">Order #${order.orderNumber}</div>
+            <div style="font-size: 12px; color: var(--text-light);">
+              <div>${getGarmentName(order.garment)}</div>
+              <div>${getDecorationName(order.decoration)}</div>
+              <div>${totalQuantity} items • ${order.deliveryName}</div>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: bold; color: var(--primary); margin-bottom: 4px;">$${orderTotal.toFixed(2)}</div>
+            <div style="display: flex; gap: 4px; justify-content: flex-end;">
+              <button type="button" onclick="editOrderFromCart(${index}); event.stopPropagation();" style="padding: 2px 6px; font-size: 11px; background: var(--bg-light); border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">Edit</button>
+              <button type="button" onclick="removeFromCart(${index}); event.stopPropagation();" style="padding: 2px 6px; font-size: 11px; background: #fee2e2; border: 1px solid #fecaca; border-radius: 4px; cursor: pointer; color: #dc2626;">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  cartItems.innerHTML = cartHTML;
+  cartTotal.textContent = `$${total.toFixed(2)}`;
+}
+
 // Approved departments list (from instructions)
 const approvedDepartments = [
   "Asset and Operational Excellence",
@@ -81,6 +170,37 @@ let personalizationCount = 0;
 
 // Section navigation
 function nextSection(current) {
+  // Validate section 2 before proceeding (garment and decoration must be selected)
+  if (current === 2) {
+    if (!orderData.garment) {
+      alert("Please select a garment type");
+      return;
+    }
+    if (!orderData.decoration) {
+      alert("Please select a decoration option");
+      return;
+    }
+    // Validate decoration-specific fields
+    if (orderData.decoration === "logo-only" || orderData.decoration === "logo-name") {
+      if (!orderData.logo) {
+        alert("Please select a logo");
+        return;
+      }
+    }
+    if (orderData.decoration === "logo-name" || orderData.decoration === "name-only" || orderData.decoration === "dept-name") {
+      if (!orderData.decorationName || orderData.decorationName.trim() === "") {
+        alert("Please enter the individual person's name");
+        return;
+      }
+    }
+    if (orderData.decoration === "dept-only" || orderData.decoration === "dept-name") {
+      if (!orderData.decorationDepartment) {
+        alert("Please select a department");
+        return;
+      }
+    }
+  }
+
   document.getElementById(`section${current}`).classList.remove("active");
   document.getElementById(`step${current}`).classList.remove("active");
   document.getElementById(`step${current}`).classList.add("completed");
@@ -89,11 +209,7 @@ function nextSection(current) {
   document.getElementById(`section${currentSection}`).classList.add("active");
   document.getElementById(`step${currentSection}`).classList.add("active");
 
-  if (currentSection === 4) {
-    initializePersonalizationSection();
-  }
-
-  if (currentSection === 5) {
+  if (currentSection === 3) {
     generateOrderSummary();
   }
 
@@ -167,6 +283,9 @@ function validateSection1() {
 
 // Listen to department change in section 1
 document.addEventListener("DOMContentLoaded", function () {
+  // Initialize cart from localStorage
+  initCart();
+
   // Wire up size guide link
   const sg = document.getElementById("viewSizeGuides");
   if (sg) {
@@ -175,10 +294,43 @@ document.addEventListener("DOMContentLoaded", function () {
       openSizeGuides();
     });
   }
+
+  // Close cart dropdown when clicking outside
+  document.addEventListener('click', function(event) {
+    const cartIcon = document.getElementById('cartIcon');
+    const cartDropdown = document.getElementById('cartDropdown');
+    if (cartDropdown && !cartIcon.contains(event.target)) {
+      cartDropdown.style.display = 'none';
+    }
+  });
+
+  // Clear add-order errors as users fix fields
+  const deliveryNameSelect = document.getElementById("deliveryNameSelect");
+  if (deliveryNameSelect) {
+    deliveryNameSelect.addEventListener("change", clearAddToCartErrors);
+  }
+
+  const shippingAddressInput = document.getElementById("shippingAddress");
+  if (shippingAddressInput) {
+    shippingAddressInput.addEventListener("input", clearAddToCartErrors);
+  }
+
+  const confirmChecked = document.getElementById("confirmChecked");
+  if (confirmChecked) {
+    confirmChecked.addEventListener("change", clearAddToCartErrors);
+  }
+
+  // Keep shipping state synced for both click and keyboard interactions
+  document.querySelectorAll('input[name="shipping"]').forEach((input) => {
+    input.addEventListener("change", function () {
+      selectShipping(this.value, this.closest(".shipping-option"));
+      clearAddToCartErrors();
+    });
+  });
 });
 
 // Section 2: Garment Selection
-function selectGarment(garment, element) {
+function selectGarment(garment) {
   orderData.garment = garment;
 
   // Define garment info with sizes based on size guide charts
@@ -274,13 +426,21 @@ function selectGarment(garment, element) {
     orderData.garmentPrice = 0; // Default to 0 if no prices defined
   }
 
-  document.querySelectorAll('input[name="garment"]').forEach((input) => {
-    input.closest(".radio-option").classList.remove("selected");
-  });
-  element.classList.add("selected");
-
-  // Update the personalization section to show size field and available sizes for this garment
-  updateSizeOptionsForGarment(selectedGarmentInfo.sizes || []);
+  // Show size selection dropdown and populate sizes
+  const sizeSelect = document.getElementById("sizeSelect");
+  const sizeGroup = document.getElementById("sizeSelectionGroup");
+  sizeSelect.innerHTML = '<option value="">Select size...</option>';
+  if (selectedGarmentInfo.sizes && selectedGarmentInfo.sizes.length > 0) {
+    selectedGarmentInfo.sizes.forEach((size) => {
+      const option = document.createElement("option");
+      option.value = size;
+      option.textContent = size;
+      sizeSelect.appendChild(option);
+    });
+    sizeGroup.style.display = "block";
+  } else {
+    sizeGroup.style.display = "none";
+  }
 
   // Populate price tier options for the selected garment (only if prices exist)
   populatePriceTierOptions(selectedGarmentInfo);
@@ -380,7 +540,7 @@ function selectPriceTier(tier) {
   updatePriceDisplay();
 
   // Update the order summary if we're on that section
-  if (currentSection === 5) {
+  if (currentSection === 3) {
     generateOrderSummary();
   }
 }
@@ -416,8 +576,27 @@ function updateSizeOptionsForGarment(sizes) {
   });
 }
 
+// Size selection
+function selectSize(size) {
+  orderData.selectedSize = size;
+  validateSection2();
+  updateGarmentPriceBasedOnQuantity();
+  if (currentSection === 3) {
+    generateOrderSummary();
+  }
+}
+
+// Quantity selection
+function updateQuantity(quantity) {
+  orderData.selectedQuantity = parseInt(quantity) || 1;
+  updateGarmentPriceBasedOnQuantity();
+  if (currentSection === 3) {
+    generateOrderSummary();
+  }
+}
+
 // Section 3: Decoration
-function selectDecoration(decoration, element) {
+function selectDecoration(decoration) {
   orderData.decoration = decoration;
 
   const prices = {
@@ -429,11 +608,6 @@ function selectDecoration(decoration, element) {
   };
 
   orderData.decorationPrice = prices[decoration];
-
-  document.querySelectorAll('input[name="decoration"]').forEach((input) => {
-    input.closest(".radio-option").classList.remove("selected");
-  });
-  element.classList.add("selected");
 
   // Show/hide fields based on decoration type
   const logoSelectionGroup = document.getElementById("logoSelectionGroup");
@@ -477,52 +651,67 @@ function selectDecoration(decoration, element) {
     document.getElementById("decorationDeptSelect").value = "";
     orderData.decorationDepartment = "";
   }
-  if (decoration !== "logo-name" && decoration !== "name-only" && decoration !== "dept-name") {
+  if (
+    decoration !== "logo-name" &&
+    decoration !== "name-only" &&
+    decoration !== "dept-name"
+  ) {
     document.getElementById("decorationNameInput").value = "";
     orderData.decorationName = "";
   }
 
-  validateSection3();
+  validateSection2();
 }
 
 // Logo selection
 function selectLogo(logo) {
   orderData.logo = logo;
-  validateSection3();
+  validateSection2();
 }
 
 // Name input
 function saveDecorationName(name) {
   orderData.decorationName = name;
-  validateSection3();
+  validateSection2();
 }
 
 // Department selection
 function saveDecorationDepartment(dept) {
   orderData.decorationDepartment = dept;
-  validateSection3();
+  validateSection2();
 }
 
-// Validate section 3
-function validateSection3() {
+// Validate section 2 (garment and decoration)
+function validateSection2() {
   const decoration = orderData.decoration;
   let isValid = false;
 
   if (decoration === "logo-only") {
     isValid = orderData.logo && orderData.logo !== "";
   } else if (decoration === "logo-name") {
-    isValid = orderData.logo && orderData.logo !== "" && 
-              orderData.decorationName && orderData.decorationName.trim() !== "";
+    isValid =
+      orderData.logo &&
+      orderData.logo !== "" &&
+      orderData.decorationName &&
+      orderData.decorationName.trim() !== "";
   } else if (decoration === "name-only") {
-    isValid = orderData.decorationName && orderData.decorationName.trim() !== "";
+    isValid =
+      orderData.decorationName && orderData.decorationName.trim() !== "";
   } else if (decoration === "dept-only") {
-    isValid = orderData.decorationDepartment && orderData.decorationDepartment !== "";
+    isValid =
+      orderData.decorationDepartment && orderData.decorationDepartment !== "";
   } else if (decoration === "dept-name") {
-    isValid = orderData.decorationDepartment && orderData.decorationDepartment !== "" &&
-              orderData.decorationName && orderData.decorationName.trim() !== "";
+    isValid =
+      orderData.decorationDepartment &&
+      orderData.decorationDepartment !== "" &&
+      orderData.decorationName &&
+      orderData.decorationName.trim() !== "";
   }
 
-  document.getElementById("next3").disabled = !isValid;
+  // Enable next2 button if garment, size, and decoration are valid
+  const garmentSelected = orderData.garment && orderData.garment !== "";
+  const sizeSelected = orderData.selectedSize && orderData.selectedSize !== "";
+  document.getElementById("next2").disabled = !(garmentSelected && sizeSelected && isValid);
 }
 
 // Section 4: Personalization Items
@@ -614,24 +803,6 @@ function addPersonalizationItem() {
         <input type="text" class="text-input" placeholder="Enter name" data-field="name" data-person="${personalizationCount}">
       </div>`;
 
-  // Build size options based on selected garment
-  let sizeOptionsHTML = '<option value="">Select size...</option>';
-  if (orderData.garmentSizes && orderData.garmentSizes.length > 0) {
-    orderData.garmentSizes.forEach((size) => {
-      sizeOptionsHTML += `<option value="${size}">${size}</option>`;
-    });
-  }
-
-  // Size field is now shown for all garments
-  const sizeFieldHTML = `
-    <div class="form-group">
-      <label class="form-label required">Size</label>
-      <select class="select-input" data-field="size" data-person="${personalizationCount}" onchange="updateGarmentPriceBasedOnQuantity()">
-        ${sizeOptionsHTML}
-      </select>
-    </div>
-  `;
-
   const itemHTML = `
     <div class="personalization-item" id="person-${personalizationCount}">
       <div class="personalization-header">
@@ -640,12 +811,9 @@ function addPersonalizationItem() {
       </div>
       ${deptHTML}
       ${nameHTML}
-      <div class="grid-2">
-        ${sizeFieldHTML}
-        <div class="form-group">
-          <label class="form-label required">Quantity</label>
-          <input type="number" class="number-input" min="1" value="1" data-field="quantity" data-person="${personalizationCount}" oninput="updateGarmentPriceBasedOnQuantity()">
-        </div>
+      <div class="form-group">
+        <label class="form-label required">Quantity</label>
+        <input type="number" class="number-input" min="1" value="1" data-field="quantity" data-person="${personalizationCount}" oninput="updateGarmentPriceBasedOnQuantity()">
       </div>
     </div>
   `;
@@ -666,16 +834,16 @@ function collectPersonalizationData() {
   document.querySelectorAll(".personalization-item").forEach((item) => {
     const personId = item.id.split("-")[1];
 
-    // Always collect size data for all garments
-    const sizeSelect = item.querySelector('[data-field="size"]');
-    const sizeValue = sizeSelect ? sizeSelect.value : "";
+    // Use the global size and quantity selection from section 2
+    const sizeValue = orderData.selectedSize || "";
+    const quantityValue = orderData.selectedQuantity || 1;
 
     const personData = {
       id: personId,
       department: item.querySelector('[data-field="department"]')?.value || "",
       name: item.querySelector('[data-field="name"]')?.value || "",
       size: sizeValue,
-      quantity: parseInt(item.querySelector('[data-field="quantity"]').value),
+      quantity: quantityValue,
     };
 
     orderData.personalizationItems.push(personData);
@@ -724,7 +892,7 @@ function updateGarmentPriceBasedOnQuantity() {
   }
 
   // Update the order summary if we're on that section
-  if (currentSection === 5) {
+  if (currentSection === 3) {
     generateOrderSummary();
   }
 
@@ -831,7 +999,7 @@ function updateGarmentPriceWithTier(priceTier) {
             if (orderData.garment === "mens-olympus-softshell-jacket-s-8xl") {
               const sTo5xlSizes = ["S", "M", "L", "XL", "XXL", "3XL", "5XL"];
               const sixXlTo8xlSizes = ["6XL", "7XL", "8XL"];
-              
+
               if (sTo5xlSizes.includes(item.size)) {
                 applicablePrice =
                   garmentInfo[orderData.garment].sizeRangePrices["S-5XL"][
@@ -851,9 +1019,18 @@ function updateGarmentPriceWithTier(priceTier) {
             else if (
               orderData.garment === "ladies-olympus-softshell-jacket-8-26"
             ) {
-              const eightTo22Sizes = ["8", "10", "12", "14", "16", "18", "20", "22"];
+              const eightTo22Sizes = [
+                "8",
+                "10",
+                "12",
+                "14",
+                "16",
+                "18",
+                "20",
+                "22",
+              ];
               const twentyFourTo26Sizes = ["24", "26"];
-              
+
               if (eightTo22Sizes.includes(item.size)) {
                 applicablePrice =
                   garmentInfo[orderData.garment].sizeRangePrices["8-22"][
@@ -1006,7 +1183,7 @@ function generateOrderSummary() {
 // Allow editing individual personalizations from review
 function editPersonalization(id) {
   // go back to personalization section
-  prevSection(5);
+  prevSection(3);
   // ensure personalization items exist; rebuild from orderData if needed
   const container = document.getElementById("personalizationItems");
   if (!document.getElementById(`person-${id}`)) {
@@ -1020,15 +1197,15 @@ function editPersonalization(id) {
       if (p.department)
         item.querySelector('[data-field="department"]').value = p.department;
       if (p.name) item.querySelector('[data-field="name"]').value = p.name;
-      if (p.size) item.querySelector('[data-field="size"]').value = p.size;
-      if (p.quantity)
-        item.querySelector('[data-field="quantity"]').value = p.quantity;
     });
   }
 
-  // Update size options based on selected garment
-  if (orderData.garmentSizes) {
-    updateSizeOptionsForGarment(orderData.garmentSizes);
+  // Set the global size and quantity inputs
+  if (orderData.selectedSize) {
+    document.getElementById("sizeSelect").value = orderData.selectedSize;
+  }
+  if (orderData.selectedQuantity) {
+    document.getElementById("quantityInput").value = orderData.selectedQuantity;
   }
 
   // focus the fields for the requested person
@@ -1071,14 +1248,14 @@ function getLogoName(logo) {
   const names = {
     "nsw-government": "NSW Government",
     "essential-energy": "Essential Energy",
-    "transport": "Transport for NSW",
+    transport: "Transport for NSW",
     "sydney-trains": "Sydney Trains",
     "nsw-trains": "NSW TrainLink",
     "roads-maritime": "Transport for NSW (Roads & Maritime)",
     "service-nsw": "Service NSW",
     "health-nsw": "NSW Health",
     "education-nsw": "NSW Department of Education",
-    "other": "Other (please contact your cost centre)",
+    other: "Other (please contact your cost centre)",
   };
   return names[logo] || logo;
 }
@@ -1168,11 +1345,26 @@ function selectShipping(type, element) {
 
   orderData.shippingPrice = prices[type];
 
+  const selectedInput = document.querySelector(
+    `input[name="shipping"][value="${type}"]`,
+  );
+  if (selectedInput) {
+    selectedInput.checked = true;
+  }
+
+  let selectedOption = element;
+  if (!selectedOption && selectedInput) {
+    selectedOption = selectedInput.closest(".shipping-option");
+  }
+
   document.querySelectorAll('input[name="shipping"]').forEach((input) => {
     input.closest(".shipping-option").classList.remove("selected");
   });
-  element.classList.add("selected");
+  if (selectedOption) {
+    selectedOption.classList.add("selected");
+  }
 
+  clearAddToCartErrors();
   updateFinalTotal();
 }
 
@@ -1183,52 +1375,295 @@ function updateFinalTotal() {
   );
   const garmentTotal = orderData.garmentPrice * totalQuantity;
   const decorationTotal = orderData.decorationPrice * totalQuantity;
-  const finalTotal =
-    garmentTotal + decorationTotal + orderData.shippingPrice;
+  const finalTotal = garmentTotal + decorationTotal + orderData.shippingPrice;
 
   document.getElementById("finalTotal").textContent =
     `$${finalTotal.toFixed(2)}`;
 }
 
-function addToCart() {
-  const address = document.getElementById("shippingAddress").value;
+function clearAddToCartErrors() {
+  const container = document.getElementById("addOrderErrors");
+  if (!container) return;
+  container.innerHTML = "";
+  container.classList.remove("is-visible");
+}
 
-  if (!address) {
-    alert("Please enter a shipping address");
+function renderAddToCartErrors(errors) {
+  const container = document.getElementById("addOrderErrors");
+  if (!container) return;
+
+  if (!errors || errors.length === 0) {
+    clearAddToCartErrors();
     return;
   }
 
-  if (!orderData.shipping) {
-    alert("Please select a shipping option");
-    return;
-  }
+  const listItems = errors.map((message) => `<li>${message}</li>`).join("");
+  container.innerHTML = `<ul>${listItems}</ul>`;
+  container.classList.add("is-visible");
+}
 
+function validateAddToCart() {
+  const errors = [];
+  const deliveryName = document.getElementById("deliveryNameSelect").value;
+  const address = document.getElementById("shippingAddress").value.trim();
   const confirmed =
     document.getElementById("confirmChecked") &&
     document.getElementById("confirmChecked").checked;
+
+  if (!deliveryName) {
+    errors.push("Please select a name of delivery.");
+  }
+
+  if (!address) {
+    errors.push("Please enter a shipping address.");
+  }
+
+  if (!orderData.shipping) {
+    errors.push("Please select a shipping option.");
+  }
+
   if (!confirmed) {
-    alert(
+    errors.push(
       "Please confirm that you have checked all personalisation details before adding to cart.",
     );
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+function addToCart() {
+  clearAddToCartErrors();
+
+  const validationResult = validateAddToCart();
+  if (!validationResult.isValid) {
+    renderAddToCartErrors(validationResult.errors);
     return;
   }
 
-  // In real Shopify implementation, this would add to cart via Ajax API
-  console.log("Adding to cart:", orderData);
+  const deliveryName = document.getElementById("deliveryNameSelect").value;
+  const address = document.getElementById("shippingAddress").value.trim();
 
-  alert(
-    "Order added to cart successfully! You can now add another garment or proceed to checkout.",
-  );
-  document.getElementById("addAnotherBtn").style.display = "block";
+  // Save current order to cart
+  const orderCopy = JSON.parse(JSON.stringify(orderData));
+  orderCopy.deliveryName = deliveryName;
+  orderCopy.shippingAddress = address;
+  orderCopy.orderNumber = orderCart.length + 1;
+  orderCopy.id = Date.now(); // Unique ID for editing
+  orderCart.push(orderCopy);
+
+  // Save to localStorage
+  saveCart();
+
+  // Reset form for new order
+  resetForm();
+  document.getElementById('cartDropdown').style.display = 'none';
 }
 
-function addAnotherGarment() {
-  if (
-    confirm(
-      "Start a new garment order? Your current order has been saved to the cart.",
-    )
-  ) {
-    // Reset form
-    window.location.reload();
+// Remove order from cart
+function removeFromCart(index) {
+  if (confirm("Are you sure you want to remove this order from the cart?")) {
+    orderCart.splice(index, 1);
+    // Renumber orders
+    orderCart.forEach((order, i) => {
+      order.orderNumber = i + 1;
+    });
+    saveCart();
   }
+}
+
+// Clear entire cart
+function clearCart() {
+  if (confirm("Are you sure you want to clear all orders from the cart?")) {
+    orderCart = [];
+    saveCart();
+    // Close dropdown if open
+    document.getElementById('cartDropdown').style.display = 'none';
+  }
+}
+
+// Edit order from cart (load it back into the form)
+function editOrderFromCart(index) {
+  if (orderCart.length === 0) return;
+
+  const order = orderCart[index];
+
+  // Remove from cart
+  orderCart.splice(index, 1);
+  // Renumber orders
+  orderCart.forEach((o, i) => {
+    o.orderNumber = i + 1;
+  });
+  saveCart();
+
+  // Load order data back into form
+  orderData = {
+    orderType: order.orderType,
+    depot: order.depot,
+    department: order.department,
+    garment: order.garment,
+    garmentPrice: order.garmentPrice,
+    decoration: order.decoration,
+    decorationPrice: order.decorationPrice,
+    logo: order.logo,
+    decorationName: order.decorationName,
+    decorationDepartment: order.decorationDepartment,
+    personalizationItems: order.personalizationItems,
+    shipping: "",
+    shippingPrice: 0,
+  };
+
+  // Populate form fields
+  const orderTypeRadio = document.querySelector(`input[name="orderType"][value="${order.orderType}"]`);
+  if (orderTypeRadio) {
+    orderTypeRadio.closest(".radio-option").classList.add("selected");
+  }
+  document.getElementById("depot").value = order.depot;
+
+  // Show/hide department field based on order type
+  if (order.orderType === "department") {
+    document.getElementById("deptSelectSection1").style.display = "block";
+    document.getElementById("departmentSelect").value = order.department;
+  } else {
+    document.getElementById("deptSelectSection1").style.display = "none";
+  }
+
+  // Set garment
+  document.getElementById("garmentSelect").value = order.garment;
+  selectGarment(order.garment);
+
+  // Set decoration
+  document.getElementById("decorationSelect").value = order.decoration;
+  selectDecoration(order.decoration);
+
+  // Set logo if applicable
+  if (order.logo) {
+    document.getElementById("logoSelect").value = order.logo;
+    selectLogo(order.logo);
+  }
+
+  // Set name if applicable
+  if (order.decorationName) {
+    document.getElementById("decorationNameInput").value = order.decorationName;
+    saveDecorationName(order.decorationName);
+  }
+
+  // Set department if applicable
+  if (order.decorationDepartment) {
+    document.getElementById("decorationDeptSelect").value = order.decorationDepartment;
+    saveDecorationDepartment(order.decorationDepartment);
+  }
+
+  // Set size and quantity
+  if (order.selectedSize) {
+    document.getElementById("sizeSelect").value = order.selectedSize;
+    orderData.selectedSize = order.selectedSize;
+  }
+  if (order.selectedQuantity) {
+    document.getElementById("quantityInput").value = order.selectedQuantity;
+    orderData.selectedQuantity = order.selectedQuantity;
+  }
+
+  // Go to section 2 (Garment & Decoration)
+  document.getElementById("section3").classList.remove("active");
+  document.getElementById("step3").classList.remove("active");
+  document.getElementById("step3").classList.add("completed");
+  document.getElementById("step2").classList.add("active");
+  document.getElementById("section2").classList.add("active");
+  currentSection = 2;
+
+  // Close cart dropdown
+  document.getElementById('cartDropdown').style.display = 'none';
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Checkout all orders
+function checkout() {
+  if (orderCart.length === 0) {
+    alert("Your cart is empty. Please add at least one order before checkout.");
+    return;
+  }
+
+  const confirmed = confirm(`You are about to submit ${orderCart.length} order(s). Do you want to proceed?`);
+  if (confirmed) {
+    console.log("Checking out orders:", orderCart);
+    alert(`Thank you! ${orderCart.length} order(s) have been submitted successfully.`);
+    orderCart = [];
+    saveCart();
+    resetForm();
+    // Close cart dropdown
+    document.getElementById('cartDropdown').style.display = 'none';
+  }
+}
+
+// Reset form for new order
+function resetForm() {
+  // Reset order data
+  orderData = {
+    orderType: "",
+    depot: "",
+    department: "",
+    garment: "",
+    garmentPrice: 0,
+    decoration: "",
+    decorationPrice: 0,
+    logo: "",
+    decorationName: "",
+    decorationDepartment: "",
+    personalizationItems: [],
+    shipping: "",
+    shippingPrice: 0,
+  };
+
+  // Reset section 1
+  document.querySelectorAll('input[name="orderType"]').forEach((input) => {
+    input.closest(".radio-option").classList.remove("selected");
+  });
+  document.getElementById("depot").value = "";
+  document.getElementById("deptSelectSection1").style.display = "none";
+  document.getElementById("departmentSelect").value = "";
+
+  // Reset section 2
+  document.getElementById("garmentSelect").value = "";
+  document.getElementById("sizeSelectionGroup").style.display = "none";
+  document.getElementById("sizeSelect").value = "";
+  document.getElementById("quantityInput").value = "1";
+  document.getElementById("priceSelectionGroup").style.display = "none";
+  document.getElementById("priceDisplayGroup").style.display = "none";
+  document.getElementById("decorationSelect").value = "";
+  document.getElementById("logoSelectionGroup").style.display = "none";
+  document.getElementById("logoSelect").value = "";
+  document.getElementById("nameInputGroup").style.display = "none";
+  document.getElementById("decorationNameInput").value = "";
+  document.getElementById("deptSelectionGroup").style.display = "none";
+  document.getElementById("decorationDeptSelect").value = "";
+
+  // Reset section 3
+  document.getElementById("deliveryNameSelect").value = "";
+  document.getElementById("shippingAddress").value = "";
+  document.querySelectorAll('input[name="shipping"]').forEach((input) => {
+    input.checked = false;
+    input.closest(".shipping-option").classList.remove("selected");
+  });
+  document.getElementById("confirmChecked").checked = false;
+  clearAddToCartErrors();
+
+  // Go to section 1
+  document.getElementById("section3").classList.remove("active");
+  document.getElementById("step3").classList.remove("active");
+  document.getElementById("step3").classList.add("completed");
+  document.getElementById("step2").classList.remove("active");
+  document.getElementById("step2").classList.add("completed");
+  document.getElementById("step1").classList.add("active");
+  document.getElementById("section1").classList.add("active");
+  currentSection = 1;
+
+  // Disable continue buttons
+  document.getElementById("next1").disabled = true;
+  document.getElementById("next2").disabled = true;
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }

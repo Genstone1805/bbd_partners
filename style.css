@@ -317,6 +317,30 @@ body {
   margin-bottom: 4px;
 }
 
+.add-order-errors {
+  display: none;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 14px;
+  margin-top: 20px;
+  padding: 12px 14px;
+}
+
+.add-order-errors.is-visible {
+  display: block;
+}
+
+.add-order-errors ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.add-order-errors li + li {
+  margin-top: 6px;
+}
+
 .button-group {
   display: flex;
   gap: 12px;
