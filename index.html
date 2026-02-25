@@ -260,7 +260,7 @@
 
                         <div class="reminder-note">
                             <strong>Reminder:</strong>
-                            You will need to do one garment type at a time. Once you have added this garment to the
+                            You will need to add one garment type at a time. Once you have added this garment to the
                             cart, you will have an option to come back and add another if you need to.
                         </div>
 
@@ -344,11 +344,14 @@
                             <label class="form-label required">Individual Person's Name</label>
                             <input type="text" class="text-input" id="decorationNameInput"
                                 placeholder="Enter person's name" oninput="saveDecorationName(this.value)">
-                            <p style="margin-top: 8px; font-size: 13px; color: #64748b; font-style: italic;">
-                                ⚠️ All garment individualisations have been approved by the relevant cost centre.
-                                BlackDog Ink takes no responsibility for un-approved customisations ie: nicknames,
-                                abbreviated names etc.
-                            </p>
+                            <label style="margin-top: 10px; display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #64748b;">
+                                <input type="checkbox" id="nameApprovalChecked" required onchange="saveNameApproval(this.checked)">
+                                <span>
+                                    All garment individualisations have been approved by the relevant cost centre.
+                                    BlackDog Ink takes no responsibility for un-approved customisations ie: nicknames,
+                                    abbreviated names etc.
+                                </span>
+                            </label>
                         </div>
 
                         <!-- Department selection dropdown (shown for dept-only, dept-name) -->
@@ -457,15 +460,9 @@
 
                         <div id="departmentShippingFields">
                             <div class="form-group" style="margin-top: 32px;">
-                                <label class="form-label required">Name of Delivery</label>
-                                <select class="select-input" id="deliveryNameSelect" required>
-                                    <option value="">Select delivery name...</option>
-                                    <option value="individual">Individual Person</option>
-                                    <option value="department">Department Representative</option>
-                                    <option value="manager">Manager</option>
-                                    <option value="supervisor">Supervisor</option>
-                                    <option value="other">Other</option>
-                                </select>
+                                <label class="form-label required">Name on Delivery</label>
+                                <input type="text" class="text-input" id="deliveryNameSelect" required
+                                    placeholder="Enter name on delivery">
                             </div>
 
                             <div class="form-group">
@@ -547,15 +544,9 @@
             </div>
 
             <div class="form-group" style="margin-top: 24px;">
-                <label class="form-label required">Name of Delivery</label>
-                <select class="select-input" id="checkoutDeliveryNameSelect">
-                    <option value="">Select delivery name...</option>
-                    <option value="individual">Individual Person</option>
-                    <option value="department">Department Representative</option>
-                    <option value="manager">Manager</option>
-                    <option value="supervisor">Supervisor</option>
-                    <option value="other">Other</option>
-                </select>
+                <label class="form-label required">Name on Delivery</label>
+                <input type="text" class="text-input" id="checkoutDeliveryNameSelect"
+                    placeholder="Enter name on delivery">
             </div>
 
             <div class="form-group">

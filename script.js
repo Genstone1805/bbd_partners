@@ -9,6 +9,7 @@ let orderData = {
   decorationPrice: 0,
   logo: "",
   decorationName: "",
+  nameApprovalChecked: false,
   decorationDepartment: "",
   personalizationItems: [],
   selectedSize: "",
@@ -130,7 +131,7 @@ function renderCartDropdown() {
       hasIndividualOrders = true;
     }
     const deliveryLine = isDepartmentOrder
-      ? `${totalQuantity} items • ${order.deliveryName || "Delivery name not set"}`
+      ? `${totalQuantity} items • ${order.deliveryName || "Name on delivery not set"}`
       : `${totalQuantity} items • ${INDIVIDUAL_SHIPPING_NOTE}`;
     total += orderTotal;
 
@@ -258,6 +259,10 @@ function nextSection(current) {
     if (orderData.decoration === "logo-name" || orderData.decoration === "name-only" || orderData.decoration === "dept-name") {
       if (!orderData.decorationName || orderData.decorationName.trim() === "") {
         alert("Please enter the individual person's name");
+        return;
+      }
+      if (!orderData.nameApprovalChecked) {
+        alert("Please confirm the cost centre approval disclaimer.");
         return;
       }
     }
@@ -443,7 +448,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear add-order errors as users fix fields
   const deliveryNameSelect = document.getElementById("deliveryNameSelect");
   if (deliveryNameSelect) {
-    deliveryNameSelect.addEventListener("change", clearAddToCartErrors);
+    deliveryNameSelect.addEventListener("input", clearAddToCartErrors);
   }
 
   const shippingAddressInput = document.getElementById("shippingAddress");
@@ -468,7 +473,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "checkoutDeliveryNameSelect",
   );
   if (checkoutDeliverySelect) {
-    checkoutDeliverySelect.addEventListener("change", clearCheckoutShippingErrors);
+    checkoutDeliverySelect.addEventListener("input", clearCheckoutShippingErrors);
   }
 
   const checkoutAddressInput = document.getElementById("checkoutShippingAddress");
@@ -829,6 +834,11 @@ function selectDecoration(decoration) {
   ) {
     document.getElementById("decorationNameInput").value = "";
     orderData.decorationName = "";
+    const nameApprovalCheckbox = document.getElementById("nameApprovalChecked");
+    if (nameApprovalCheckbox) {
+      nameApprovalCheckbox.checked = false;
+    }
+    orderData.nameApprovalChecked = false;
   }
 
   validateSection2();
@@ -843,6 +853,11 @@ function selectLogo(logo) {
 // Name input
 function saveDecorationName(name) {
   orderData.decorationName = name;
+  validateSection2();
+}
+
+function saveNameApproval(isChecked) {
+  orderData.nameApprovalChecked = Boolean(isChecked);
   validateSection2();
 }
 
@@ -864,10 +879,13 @@ function validateSection2() {
       orderData.logo &&
       orderData.logo !== "" &&
       orderData.decorationName &&
-      orderData.decorationName.trim() !== "";
+      orderData.decorationName.trim() !== "" &&
+      orderData.nameApprovalChecked;
   } else if (decoration === "name-only") {
     isValid =
-      orderData.decorationName && orderData.decorationName.trim() !== "";
+      orderData.decorationName &&
+      orderData.decorationName.trim() !== "" &&
+      orderData.nameApprovalChecked;
   } else if (decoration === "dept-only") {
     isValid =
       orderData.decorationDepartment && orderData.decorationDepartment !== "";
@@ -876,7 +894,8 @@ function validateSection2() {
       orderData.decorationDepartment &&
       orderData.decorationDepartment !== "" &&
       orderData.decorationName &&
-      orderData.decorationName.trim() !== "";
+      orderData.decorationName.trim() !== "" &&
+      orderData.nameApprovalChecked;
   }
 
   // Enable next2 button if garment, size, and decoration are valid
@@ -1688,16 +1707,20 @@ function renderCheckoutShippingErrors(errors) {
 function validateAddToCart() {
   const errors = [];
   const isDepartmentOrder = orderData.orderType === "department";
+  const requiresNameApproval =
+    orderData.decoration === "logo-name" ||
+    orderData.decoration === "name-only" ||
+    orderData.decoration === "dept-name";
   const confirmed =
     document.getElementById("confirmChecked") &&
     document.getElementById("confirmChecked").checked;
 
   if (isDepartmentOrder) {
-    const deliveryName = document.getElementById("deliveryNameSelect").value;
+    const deliveryName = document.getElementById("deliveryNameSelect").value.trim();
     const address = document.getElementById("shippingAddress").value.trim();
 
     if (!deliveryName) {
-      errors.push("Please select a name of delivery.");
+      errors.push("Please enter a name on delivery.");
     }
 
     if (!address) {
@@ -1707,6 +1730,10 @@ function validateAddToCart() {
     if (!orderData.shipping) {
       errors.push("Please select a shipping option.");
     }
+  }
+
+  if (requiresNameApproval && !orderData.nameApprovalChecked) {
+    errors.push("Please confirm the cost centre approval disclaimer.");
   }
 
   if (!confirmed) {
@@ -1733,7 +1760,7 @@ function addToCart() {
 
   const isDepartmentOrder = orderData.orderType === "department";
   const deliveryName = isDepartmentOrder
-    ? document.getElementById("deliveryNameSelect").value
+    ? document.getElementById("deliveryNameSelect").value.trim()
     : INDIVIDUAL_SHIPPING_NOTE;
   const address = isDepartmentOrder
     ? document.getElementById("shippingAddress").value.trim()
@@ -1811,6 +1838,7 @@ function editOrderFromCart(index) {
     decorationPrice: order.decorationPrice,
     logo: order.logo,
     decorationName: order.decorationName,
+    nameApprovalChecked: Boolean(order.nameApprovalChecked),
     decorationDepartment: order.decorationDepartment,
     personalizationItems: order.personalizationItems || [],
     selectedSize: order.selectedSize || "",
@@ -1856,6 +1884,11 @@ function editOrderFromCart(index) {
   // Set decoration
   document.getElementById("decorationSelect").value = order.decoration;
   selectDecoration(order.decoration);
+  const nameApprovalCheckbox = document.getElementById("nameApprovalChecked");
+  if (nameApprovalCheckbox) {
+    nameApprovalCheckbox.checked = Boolean(order.nameApprovalChecked);
+  }
+  orderData.nameApprovalChecked = Boolean(order.nameApprovalChecked);
 
   // Set logo if applicable
   if (order.logo) {
@@ -1944,13 +1977,13 @@ function closeCheckoutShippingModal() {
 
 function validateCheckoutSharedShipping() {
   const errors = [];
-  const deliveryName = document.getElementById("checkoutDeliveryNameSelect").value;
+  const deliveryName = document.getElementById("checkoutDeliveryNameSelect").value.trim();
   const shippingAddress = document
     .getElementById("checkoutShippingAddress")
     .value.trim();
 
   if (!deliveryName) {
-    errors.push("Please select a name of delivery.");
+    errors.push("Please enter a name on delivery.");
   }
 
   if (!shippingAddress) {
@@ -2055,6 +2088,7 @@ function resetForm() {
     decorationPrice: 0,
     logo: "",
     decorationName: "",
+    nameApprovalChecked: false,
     decorationDepartment: "",
     personalizationItems: [],
     selectedSize: "",
@@ -2084,6 +2118,7 @@ function resetForm() {
   document.getElementById("logoSelect").value = "";
   document.getElementById("nameInputGroup").style.display = "none";
   document.getElementById("decorationNameInput").value = "";
+  document.getElementById("nameApprovalChecked").checked = false;
   document.getElementById("deptSelectionGroup").style.display = "none";
   document.getElementById("decorationDeptSelect").value = "";
 
