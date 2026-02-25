@@ -546,6 +546,42 @@ body {
   margin-right: 12px;
 }
 
+.checkout-note {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1d4ed8;
+  font-size: 14px;
+  padding: 12px 14px;
+}
+
+.checkout-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 3000;
+}
+
+.checkout-modal-card {
+  background: white;
+  border-radius: 12px;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.35);
+}
+
+.checkout-modal-subtitle {
+  color: var(--text-light);
+  margin-top: 8px;
+}
+
 /* Price table styling */
 .price-table {
   width: 100%;

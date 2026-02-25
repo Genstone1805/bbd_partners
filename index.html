@@ -34,6 +34,7 @@
                                 <span>Total:</span>
                                 <span id="cartDropdownTotal" class="price">$0.00</span>
                             </div>
+                            <div id="cartShippingNote" style="display: none; margin-bottom: 12px; font-size: 12px; color: var(--text-light);"></div>
                             <button type="button" class="btn btn-primary" onclick="checkout()" style="width: 100%;">Checkout</button>
                             <button type="button" class="btn btn-secondary" onclick="clearCart()" style="width: 100%; margin-top: 8px;">Clear Cart</button>
                         </div>
@@ -449,68 +450,75 @@
                             </div>
                         </div>
 
-                        <div class="form-group" style="margin-top: 32px;">
-                            <label class="form-label required">Name of Delivery</label>
-                            <select class="select-input" id="deliveryNameSelect" required>
-                                <option value="">Select delivery name...</option>
-                                <option value="individual">Individual Person</option>
-                                <option value="department">Department Representative</option>
-                                <option value="manager">Manager</option>
-                                <option value="supervisor">Supervisor</option>
-                                <option value="other">Other</option>
-                            </select>
+                        <div id="individualShippingNotice" class="checkout-note" style="display: none; margin-top: 32px;">
+                            This is an <strong>Individual</strong> order. Shipping details will be collected once at
+                            checkout and applied to all individual orders in your cart.
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label required">Shipping Address</label>
-                            <input type="text" class="text-input" id="shippingAddress"
-                                placeholder="Enter depot address for delivery">
-                        </div>
+                        <div id="departmentShippingFields">
+                            <div class="form-group" style="margin-top: 32px;">
+                                <label class="form-label required">Name of Delivery</label>
+                                <select class="select-input" id="deliveryNameSelect" required>
+                                    <option value="">Select delivery name...</option>
+                                    <option value="individual">Individual Person</option>
+                                    <option value="department">Department Representative</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="supervisor">Supervisor</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
 
-                        <div class="form-group">
-                            <label class="form-label required">Select Shipping Option</label>
-                            <div id="shippingOptions">
-                                <label class="shipping-option" onclick="selectShipping('small', this)">
-                                    <div>
-                                        <input type="radio" name="shipping" value="small">
-                                        <span><strong>Small Postage Bag</strong> (1 shirt)</span>
-                                    </div>
-                                    <span class="price">$15.50</span>
-                                </label>
-                                <label class="shipping-option" onclick="selectShipping('medium', this)">
-                                    <div>
-                                        <input type="radio" name="shipping" value="medium">
-                                        <span><strong>Medium Postage Bag</strong> (2 shirts)</span>
-                                    </div>
-                                    <span class="price">$18.00</span>
-                                </label>
-                                <label class="shipping-option" onclick="selectShipping('large', this)">
-                                    <div>
-                                        <input type="radio" name="shipping" value="large">
-                                        <span><strong>Large Postage Bag</strong> (1 jacket, 1 shirt)</span>
-                                    </div>
-                                    <span class="price">$20.00</span>
-                                </label>
-                                <label class="shipping-option" onclick="selectShipping('xl', this)">
-                                    <div>
-                                        <input type="radio" name="shipping" value="xl">
-                                        <span><strong>XL Postage Bag</strong> (2 jackets)</span>
-                                    </div>
-                                    <span class="price">$25.00</span>
-                                </label>
-                                <label class="shipping-option" onclick="selectShipping('freight', this)">
-                                    <div>
-                                        <input type="radio" name="shipping" value="freight">
-                                        <span><strong>Local Freight</strong> per box/satchel to Buller St PMQ</span>
-                                    </div>
-                                    <span class="price">$12.00</span>
-                                </label>
+                            <div class="form-group">
+                                <label class="form-label required">Shipping Address</label>
+                                <input type="text" class="text-input" id="shippingAddress"
+                                    placeholder="Enter depot address for delivery">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required">Select Shipping Option</label>
+                                <div id="shippingOptions">
+                                    <label class="shipping-option" onclick="selectShipping('small', this)">
+                                        <div>
+                                            <input type="radio" name="shipping" value="small">
+                                            <span><strong>Small Postage Bag</strong> (1 shirt)</span>
+                                        </div>
+                                        <span class="price">$15.50</span>
+                                    </label>
+                                    <label class="shipping-option" onclick="selectShipping('medium', this)">
+                                        <div>
+                                            <input type="radio" name="shipping" value="medium">
+                                            <span><strong>Medium Postage Bag</strong> (2 shirts)</span>
+                                        </div>
+                                        <span class="price">$18.00</span>
+                                    </label>
+                                    <label class="shipping-option" onclick="selectShipping('large', this)">
+                                        <div>
+                                            <input type="radio" name="shipping" value="large">
+                                            <span><strong>Large Postage Bag</strong> (1 jacket, 1 shirt)</span>
+                                        </div>
+                                        <span class="price">$20.00</span>
+                                    </label>
+                                    <label class="shipping-option" onclick="selectShipping('xl', this)">
+                                        <div>
+                                            <input type="radio" name="shipping" value="xl">
+                                            <span><strong>XL Postage Bag</strong> (2 jackets)</span>
+                                        </div>
+                                        <span class="price">$25.00</span>
+                                    </label>
+                                    <label class="shipping-option" onclick="selectShipping('freight', this)">
+                                        <div>
+                                            <input type="radio" name="shipping" value="freight">
+                                            <span><strong>Local Freight</strong> per box/satchel to Buller St PMQ</span>
+                                        </div>
+                                        <span class="price">$12.00</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
                         <div class="order-summary">
                             <div class="summary-total">
-                                <span>Order Total:</span>
+                                <span id="finalTotalLabel">Order Total:</span>
                                 <span id="finalTotal" class="price">$0.00</span>
                             </div>
                         </div>
@@ -526,6 +534,84 @@
                 </div>
             </form>
         </main>
+    </div>
+    <div id="checkoutShippingModal" class="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkoutShippingTitle" style="display: none;">
+        <div class="checkout-modal-card">
+            <h3 id="checkoutShippingTitle">Shipping Details for Individual Orders</h3>
+            <p id="checkoutShippingSummary" class="checkout-modal-subtitle"></p>
+            <div class="order-summary" style="margin-top: 16px;">
+                <div class="summary-total" style="margin-top: 0; padding-top: 0; border-top: none;">
+                    <span>Checkout Total:</span>
+                    <span id="checkoutGrandTotal" class="price">$0.00</span>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 24px;">
+                <label class="form-label required">Name of Delivery</label>
+                <select class="select-input" id="checkoutDeliveryNameSelect">
+                    <option value="">Select delivery name...</option>
+                    <option value="individual">Individual Person</option>
+                    <option value="department">Department Representative</option>
+                    <option value="manager">Manager</option>
+                    <option value="supervisor">Supervisor</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Shipping Address</label>
+                <input type="text" class="text-input" id="checkoutShippingAddress"
+                    placeholder="Enter depot address for delivery">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label required">Select Shipping Option</label>
+                <div id="checkoutShippingOptions">
+                    <label class="shipping-option" onclick="selectCheckoutShipping('small', this)">
+                        <div>
+                            <input type="radio" name="checkoutShipping" value="small">
+                            <span><strong>Small Postage Bag</strong> (1 shirt)</span>
+                        </div>
+                        <span class="price">$15.50</span>
+                    </label>
+                    <label class="shipping-option" onclick="selectCheckoutShipping('medium', this)">
+                        <div>
+                            <input type="radio" name="checkoutShipping" value="medium">
+                            <span><strong>Medium Postage Bag</strong> (2 shirts)</span>
+                        </div>
+                        <span class="price">$18.00</span>
+                    </label>
+                    <label class="shipping-option" onclick="selectCheckoutShipping('large', this)">
+                        <div>
+                            <input type="radio" name="checkoutShipping" value="large">
+                            <span><strong>Large Postage Bag</strong> (1 jacket, 1 shirt)</span>
+                        </div>
+                        <span class="price">$20.00</span>
+                    </label>
+                    <label class="shipping-option" onclick="selectCheckoutShipping('xl', this)">
+                        <div>
+                            <input type="radio" name="checkoutShipping" value="xl">
+                            <span><strong>XL Postage Bag</strong> (2 jackets)</span>
+                        </div>
+                        <span class="price">$25.00</span>
+                    </label>
+                    <label class="shipping-option" onclick="selectCheckoutShipping('freight', this)">
+                        <div>
+                            <input type="radio" name="checkoutShipping" value="freight">
+                            <span><strong>Local Freight</strong> per box/satchel to Buller St PMQ</span>
+                        </div>
+                        <span class="price">$12.00</span>
+                    </label>
+                </div>
+            </div>
+
+            <div id="checkoutShippingErrors" class="add-order-errors" aria-live="polite"></div>
+
+            <div class="button-group" style="margin-top: 20px; padding-top: 20px;">
+                <button class="btn btn-secondary" type="button" onclick="closeCheckoutShippingModal()">Cancel</button>
+                <button class="btn btn-primary" type="button" onclick="confirmCheckoutWithSharedShipping()">Submit Orders</button>
+            </div>
+        </div>
     </div>
     <div id="successToast" class="success-toast" role="status" aria-live="polite"></div>
     <script src="script.js"></script>

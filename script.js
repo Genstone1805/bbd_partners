@@ -11,12 +11,27 @@ let orderData = {
   decorationName: "",
   decorationDepartment: "",
   personalizationItems: [],
+  selectedSize: "",
+  selectedQuantity: 1,
+  totalGarmentPrice: 0,
   shipping: "",
   shippingPrice: 0,
 };
 
 // Order cart to store multiple orders (load from localStorage)
 let orderCart = JSON.parse(localStorage.getItem('garmentOrderCart')) || [];
+const SHIPPING_PRICES = {
+  small: 15.5,
+  medium: 18.0,
+  large: 20.0,
+  xl: 25.0,
+  freight: 12.0,
+};
+const INDIVIDUAL_SHIPPING_NOTE = "Shipping collected at checkout";
+let checkoutShippingData = {
+  shipping: "",
+  shippingPrice: 0,
+};
 
 // Initialize cart on page load
 function initCart() {
@@ -51,30 +66,72 @@ function toggleCartDropdown() {
   }
 }
 
+function calculateOrderLineTotals(order) {
+  const hasPersonalizationItems =
+    Array.isArray(order.personalizationItems) &&
+    order.personalizationItems.length > 0;
+  const totalQuantity = hasPersonalizationItems
+    ? order.personalizationItems.reduce(
+        (sum, item) => sum + (item.quantity || 0),
+        0,
+      )
+    : Math.max(parseInt(order.selectedQuantity, 10) || 1, 1);
+  const garmentTotal =
+    typeof order.totalGarmentPrice === "number"
+      ? order.totalGarmentPrice
+      : (order.garmentPrice || 0) * totalQuantity;
+  const decorationTotal = (order.decorationPrice || 0) * totalQuantity;
+  const shippingTotal =
+    order.orderType === "department" ? (order.shippingPrice || 0) : 0;
+
+  return {
+    totalQuantity,
+    garmentTotal,
+    decorationTotal,
+    shippingTotal,
+    orderTotal: garmentTotal + decorationTotal + shippingTotal,
+  };
+}
+
+function calculateCartTotal(sharedIndividualShippingPrice = 0) {
+  const baseTotal = orderCart.reduce(
+    (sum, order) => sum + calculateOrderLineTotals(order).orderTotal,
+    0,
+  );
+  return baseTotal + sharedIndividualShippingPrice;
+}
+
 // Render cart dropdown
 function renderCartDropdown() {
   const cartItems = document.getElementById('cartDropdownItems');
   const cartTotal = document.getElementById('cartDropdownTotal');
   const cartFooter = document.getElementById('cartDropdownFooter');
+  const cartShippingNote = document.getElementById("cartShippingNote");
 
   if (orderCart.length === 0) {
     cartItems.innerHTML = '<div style="padding: 24px; text-align: center; color: var(--text-light);">Your cart is empty</div>';
     cartFooter.style.display = 'none';
+    if (cartShippingNote) {
+      cartShippingNote.style.display = "none";
+      cartShippingNote.textContent = "";
+    }
     return;
   }
 
   cartFooter.style.display = 'block';
   let cartHTML = '';
   let total = 0;
+  let hasIndividualOrders = false;
 
   orderCart.forEach((order, index) => {
-    const totalQuantity = order.personalizationItems.reduce(
-      (sum, item) => sum + (item.quantity || 0),
-      0,
-    );
-    const garmentTotal = order.garmentPrice * totalQuantity;
-    const decorationTotal = order.decorationPrice * totalQuantity;
-    const orderTotal = garmentTotal + decorationTotal + order.shippingPrice;
+    const { totalQuantity, orderTotal } = calculateOrderLineTotals(order);
+    const isDepartmentOrder = order.orderType === "department";
+    if (!isDepartmentOrder) {
+      hasIndividualOrders = true;
+    }
+    const deliveryLine = isDepartmentOrder
+      ? `${totalQuantity} items • ${order.deliveryName || "Delivery name not set"}`
+      : `${totalQuantity} items • ${INDIVIDUAL_SHIPPING_NOTE}`;
     total += orderTotal;
 
     cartHTML += `
@@ -83,9 +140,10 @@ function renderCartDropdown() {
           <div style="flex: 1;">
             <div style="font-weight: bold; color: var(--text); margin-bottom: 4px;">Order #${order.orderNumber}</div>
             <div style="font-size: 12px; color: var(--text-light);">
+              <div>${isDepartmentOrder ? "Department order" : "Individual order"}</div>
               <div>${getGarmentName(order.garment)}</div>
               <div>${getDecorationName(order.decoration)}</div>
-              <div>${totalQuantity} items • ${order.deliveryName}</div>
+              <div>${deliveryLine}</div>
             </div>
           </div>
           <div style="text-align: right;">
@@ -102,6 +160,16 @@ function renderCartDropdown() {
 
   cartItems.innerHTML = cartHTML;
   cartTotal.textContent = `$${total.toFixed(2)}`;
+  if (cartShippingNote) {
+    if (hasIndividualOrders) {
+      cartShippingNote.textContent =
+        "Individual orders use one shared shipping charge at checkout.";
+      cartShippingNote.style.display = "block";
+    } else {
+      cartShippingNote.style.display = "none";
+      cartShippingNote.textContent = "";
+    }
+  }
 }
 
 // Approved departments list (from instructions)
@@ -231,6 +299,69 @@ function prevSection(current) {
 }
 
 // Section 1: Order Type & Depot
+function resetPerOrderShippingState() {
+  orderData.shipping = "";
+  orderData.shippingPrice = 0;
+
+  const deliveryNameSelect = document.getElementById("deliveryNameSelect");
+  if (deliveryNameSelect) {
+    deliveryNameSelect.value = "";
+  }
+
+  const shippingAddressInput = document.getElementById("shippingAddress");
+  if (shippingAddressInput) {
+    shippingAddressInput.value = "";
+  }
+
+  document.querySelectorAll('input[name="shipping"]').forEach((input) => {
+    input.checked = false;
+    const option = input.closest(".shipping-option");
+    if (option) {
+      option.classList.remove("selected");
+    }
+  });
+}
+
+function updateSection3ShippingUI() {
+  const departmentShippingFields = document.getElementById(
+    "departmentShippingFields",
+  );
+  const individualShippingNotice = document.getElementById(
+    "individualShippingNotice",
+  );
+  const finalTotalLabel = document.getElementById("finalTotalLabel");
+
+  const hasOrderType =
+    orderData.orderType === "department" || orderData.orderType === "individual";
+
+  if (!hasOrderType) {
+    if (departmentShippingFields) {
+      departmentShippingFields.style.display = "none";
+    }
+    if (individualShippingNotice) {
+      individualShippingNotice.style.display = "none";
+    }
+    if (finalTotalLabel) {
+      finalTotalLabel.textContent = "Order Total:";
+    }
+    return;
+  }
+
+  const isDepartmentOrder = orderData.orderType === "department";
+
+  if (departmentShippingFields) {
+    departmentShippingFields.style.display = isDepartmentOrder ? "block" : "none";
+  }
+  if (individualShippingNotice) {
+    individualShippingNotice.style.display = isDepartmentOrder ? "none" : "block";
+  }
+  if (finalTotalLabel) {
+    finalTotalLabel.textContent = isDepartmentOrder
+      ? "Order Total:"
+      : "Order Total (shipping added at checkout):";
+  }
+}
+
 function selectOrderType(type, element) {
   orderData.orderType = type;
   document.querySelectorAll('input[name="orderType"]').forEach((input) => {
@@ -244,8 +375,12 @@ function selectOrderType(type, element) {
     document.getElementById("deptSelectSection1").style.display = "none";
     document.getElementById("departmentSelect").value = "";
     orderData.department = "";
+    resetPerOrderShippingState();
   }
 
+  updateSection3ShippingUI();
+  updateFinalTotal();
+  clearAddToCartErrors();
   validateSection1();
 }
 
@@ -285,6 +420,7 @@ function validateSection1() {
 document.addEventListener("DOMContentLoaded", function () {
   // Initialize cart from localStorage
   initCart();
+  updateSection3ShippingUI();
 
   // Wire up size guide link
   const sg = document.getElementById("viewSizeGuides");
@@ -327,6 +463,33 @@ document.addEventListener("DOMContentLoaded", function () {
       clearAddToCartErrors();
     });
   });
+
+  const checkoutDeliverySelect = document.getElementById(
+    "checkoutDeliveryNameSelect",
+  );
+  if (checkoutDeliverySelect) {
+    checkoutDeliverySelect.addEventListener("change", clearCheckoutShippingErrors);
+  }
+
+  const checkoutAddressInput = document.getElementById("checkoutShippingAddress");
+  if (checkoutAddressInput) {
+    checkoutAddressInput.addEventListener("input", clearCheckoutShippingErrors);
+  }
+
+  document.querySelectorAll('input[name="checkoutShipping"]').forEach((input) => {
+    input.addEventListener("change", function () {
+      selectCheckoutShipping(this.value, this.closest(".shipping-option"));
+    });
+  });
+
+  const checkoutModal = document.getElementById("checkoutShippingModal");
+  if (checkoutModal) {
+    checkoutModal.addEventListener("click", function (event) {
+      if (event.target === checkoutModal) {
+        closeCheckoutShippingModal();
+      }
+    });
+  }
 });
 
 // Section 2: Garment Selection
@@ -417,6 +580,9 @@ function selectGarment(garment) {
   const selectedGarmentInfo = garmentInfo[garment];
   orderData.garmentName = selectedGarmentInfo.name;
   orderData.garmentSizes = selectedGarmentInfo.sizes || [];
+  orderData.totalGarmentPrice = 0;
+  orderData.selectedQuantity =
+    parseInt(document.getElementById("quantityInput")?.value, 10) || 1;
 
   // Calculate price based on quantity (default to lowest tier initially)
   // Only set price if the garment has prices defined
@@ -483,7 +649,7 @@ function populatePriceTierOptions(garmentInfo) {
 
         for (const [tier, price] of Object.entries(prices)) {
           const option = document.createElement("option");
-          option.value = `${sizeRange}-${tier}`;
+          option.value = tier;
           option.textContent = `${tier} items: $${price.toFixed(2)} each`;
           optgroup.appendChild(option);
         }
@@ -588,7 +754,12 @@ function selectSize(size) {
 
 // Quantity selection
 function updateQuantity(quantity) {
-  orderData.selectedQuantity = parseInt(quantity) || 1;
+  const normalizedQuantity = Math.max(parseInt(quantity, 10) || 1, 1);
+  orderData.selectedQuantity = normalizedQuantity;
+  const quantityInput = document.getElementById("quantityInput");
+  if (quantityInput && parseInt(quantityInput.value, 10) !== normalizedQuantity) {
+    quantityInput.value = normalizedQuantity;
+  }
   updateGarmentPriceBasedOnQuantity();
   if (currentSection === 3) {
     generateOrderSummary();
@@ -829,28 +1000,46 @@ function removePersonalizationItem(id) {
 }
 
 function collectPersonalizationData() {
+  const sizeInput = document.getElementById("sizeSelect");
+  const quantityInput = document.getElementById("quantityInput");
+  const selectedSize = orderData.selectedSize || sizeInput?.value || "";
+  const selectedQuantity = Math.max(
+    parseInt(orderData.selectedQuantity || quantityInput?.value, 10) || 1,
+    1,
+  );
+
+  orderData.selectedSize = selectedSize;
+  orderData.selectedQuantity = selectedQuantity;
   orderData.personalizationItems = [];
 
-  document.querySelectorAll(".personalization-item").forEach((item) => {
+  const personalizationRows = document.querySelectorAll(".personalization-item");
+  if (personalizationRows.length === 0) {
+    orderData.personalizationItems.push({
+      id: "1",
+      department: orderData.decorationDepartment || "",
+      name: orderData.decorationName || "",
+      size: selectedSize,
+      quantity: selectedQuantity,
+    });
+    return;
+  }
+
+  personalizationRows.forEach((item) => {
     const personId = item.id.split("-")[1];
+    const rowQuantity = Math.max(
+      parseInt(item.querySelector('[data-field="quantity"]')?.value, 10) ||
+        selectedQuantity,
+      1,
+    );
 
-    // Use the global size and quantity selection from section 2
-    const sizeValue = orderData.selectedSize || "";
-    const quantityValue = orderData.selectedQuantity || 1;
-
-    const personData = {
+    orderData.personalizationItems.push({
       id: personId,
       department: item.querySelector('[data-field="department"]')?.value || "",
       name: item.querySelector('[data-field="name"]')?.value || "",
-      size: sizeValue,
-      quantity: quantityValue,
-    };
-
-    orderData.personalizationItems.push(personData);
+      size: selectedSize,
+      quantity: rowQuantity,
+    });
   });
-
-  // Update garment price based on total quantity
-  updateGarmentPriceBasedOnQuantity();
 }
 
 // Function to update garment price based on total quantity ordered
@@ -859,7 +1048,8 @@ function updateGarmentPriceBasedOnQuantity() {
   collectPersonalizationData();
 
   // Get the selected price tier from the dropdown
-  const selectedPriceTier = document.getElementById("priceTierSelect").value;
+  const priceTierSelect = document.getElementById("priceTierSelect");
+  const selectedPriceTier = priceTierSelect ? priceTierSelect.value : "";
 
   // If no price tier is selected, use the automatic calculation
   if (!selectedPriceTier) {
@@ -882,7 +1072,9 @@ function updateGarmentPriceBasedOnQuantity() {
     }
 
     // Update the price tier dropdown to reflect the automatic selection
-    document.getElementById("priceTierSelect").value = priceTier;
+    if (priceTierSelect) {
+      priceTierSelect.value = priceTier;
+    }
 
     // Use the automatic price tier
     updateGarmentPriceWithTier(priceTier);
@@ -902,6 +1094,15 @@ function updateGarmentPriceBasedOnQuantity() {
 
 // Helper function to update garment price with a specific tier
 function updateGarmentPriceWithTier(priceTier) {
+  const validTiers = ["1-24", "25-49", "50-99", "100+"];
+  let normalizedPriceTier = priceTier;
+  if (!validTiers.includes(normalizedPriceTier || "")) {
+    const matchedTier = validTiers.find((tier) =>
+      (normalizedPriceTier || "").endsWith(tier),
+    );
+    normalizedPriceTier = matchedTier || "1-24";
+  }
+
   // Update the garment price based on the selected garment and quantity tier
   if (orderData.garment) {
     // Use the simplified garmentInfo structure as specified
@@ -978,6 +1179,13 @@ function updateGarmentPriceWithTier(priceTier) {
     };
 
     if (garmentInfo[orderData.garment]) {
+      if (!garmentInfo[orderData.garment].prices) {
+        orderData.garmentPrice = 0;
+        orderData.totalGarmentPrice = 0;
+        updatePriceDisplay();
+        return;
+      }
+
       // Check if this garment has size-range specific pricing
       if (garmentInfo[orderData.garment].sizeRangePrices) {
         // Calculate the total price based on individual selections
@@ -990,7 +1198,7 @@ function updateGarmentPriceWithTier(priceTier) {
 
             // Determine which size range this size belongs to
             let applicablePrice =
-              garmentInfo[orderData.garment].prices[priceTier]; // fallback
+              garmentInfo[orderData.garment].prices[normalizedPriceTier]; // fallback
 
             // For mens-olympus-softshell-jacket-s-8xl
             // Sizes: S, M, L, XL, XXL, 3XL, 5XL, 6XL, 7XL, 8XL
@@ -1003,12 +1211,12 @@ function updateGarmentPriceWithTier(priceTier) {
               if (sTo5xlSizes.includes(item.size)) {
                 applicablePrice =
                   garmentInfo[orderData.garment].sizeRangePrices["S-5XL"][
-                    priceTier
+                    normalizedPriceTier
                   ];
               } else if (sixXlTo8xlSizes.includes(item.size)) {
                 applicablePrice =
                   garmentInfo[orderData.garment].sizeRangePrices["6XL-8XL"][
-                    priceTier
+                    normalizedPriceTier
                   ];
               }
             }
@@ -1034,12 +1242,12 @@ function updateGarmentPriceWithTier(priceTier) {
               if (eightTo22Sizes.includes(item.size)) {
                 applicablePrice =
                   garmentInfo[orderData.garment].sizeRangePrices["8-22"][
-                    priceTier
+                    normalizedPriceTier
                   ];
               } else if (twentyFourTo26Sizes.includes(item.size)) {
                 applicablePrice =
                   garmentInfo[orderData.garment].sizeRangePrices["24-26"][
-                    priceTier
+                    normalizedPriceTier
                   ];
               }
             }
@@ -1057,12 +1265,12 @@ function updateGarmentPriceWithTier(priceTier) {
           orderData.garmentPrice = totalPrice / itemCount;
         } else {
           orderData.garmentPrice =
-            garmentInfo[orderData.garment].prices[priceTier];
+            garmentInfo[orderData.garment].prices[normalizedPriceTier];
         }
       } else {
         // Standard pricing (not dependent on size ranges)
         orderData.garmentPrice =
-          garmentInfo[orderData.garment].prices[priceTier];
+          garmentInfo[orderData.garment].prices[normalizedPriceTier];
         orderData.totalGarmentPrice =
           orderData.garmentPrice *
           orderData.personalizationItems.reduce(
@@ -1080,6 +1288,7 @@ function updateGarmentPriceWithTier(priceTier) {
 // Section 5: Order Summary
 function generateOrderSummary() {
   collectPersonalizationData();
+  updateSection3ShippingUI();
 
   const container = document.getElementById("orderSummaryContent");
   // Determine what to display based on order type
@@ -1334,16 +1543,7 @@ function switchSizeGuideTab(imageName, clickedButton) {
 
 function selectShipping(type, element) {
   orderData.shipping = type;
-
-  const prices = {
-    small: 15.5,
-    medium: 18.0,
-    large: 20.0,
-    xl: 25.0,
-    freight: 12.0,
-  };
-
-  orderData.shippingPrice = prices[type];
+  orderData.shippingPrice = SHIPPING_PRICES[type] || 0;
 
   const selectedInput = document.querySelector(
     `input[name="shipping"][value="${type}"]`,
@@ -1368,14 +1568,52 @@ function selectShipping(type, element) {
   updateFinalTotal();
 }
 
+function selectCheckoutShipping(type, element) {
+  checkoutShippingData.shipping = type;
+  checkoutShippingData.shippingPrice = SHIPPING_PRICES[type] || 0;
+
+  const selectedInput = document.querySelector(
+    `input[name="checkoutShipping"][value="${type}"]`,
+  );
+  if (selectedInput) {
+    selectedInput.checked = true;
+  }
+
+  let selectedOption = element;
+  if (!selectedOption && selectedInput) {
+    selectedOption = selectedInput.closest(".shipping-option");
+  }
+
+  document.querySelectorAll('input[name="checkoutShipping"]').forEach((input) => {
+    const option = input.closest(".shipping-option");
+    if (option) {
+      option.classList.remove("selected");
+    }
+  });
+
+  if (selectedOption) {
+    selectedOption.classList.add("selected");
+  }
+
+  clearCheckoutShippingErrors();
+  updateCheckoutModalTotals(checkoutShippingData.shippingPrice);
+}
+
 function updateFinalTotal() {
+  collectPersonalizationData();
+
   const totalQuantity = orderData.personalizationItems.reduce(
     (sum, item) => sum + item.quantity,
     0,
   );
-  const garmentTotal = orderData.garmentPrice * totalQuantity;
+  const garmentTotal =
+    typeof orderData.totalGarmentPrice === "number"
+      ? orderData.totalGarmentPrice
+      : orderData.garmentPrice * totalQuantity;
   const decorationTotal = orderData.decorationPrice * totalQuantity;
-  const finalTotal = garmentTotal + decorationTotal + orderData.shippingPrice;
+  const shippingTotal =
+    orderData.orderType === "department" ? orderData.shippingPrice : 0;
+  const finalTotal = garmentTotal + decorationTotal + shippingTotal;
 
   document.getElementById("finalTotal").textContent =
     `$${finalTotal.toFixed(2)}`;
@@ -1386,6 +1624,20 @@ function clearAddToCartErrors() {
   if (!container) return;
   container.innerHTML = "";
   container.classList.remove("is-visible");
+}
+
+function clearCheckoutShippingErrors() {
+  const container = document.getElementById("checkoutShippingErrors");
+  if (!container) return;
+  container.innerHTML = "";
+  container.classList.remove("is-visible");
+}
+
+function updateCheckoutModalTotals(sharedShippingPrice = 0) {
+  const totalElement = document.getElementById("checkoutGrandTotal");
+  if (!totalElement) return;
+  const total = calculateCartTotal(sharedShippingPrice);
+  totalElement.textContent = `$${total.toFixed(2)}`;
 }
 
 let successToastTimer;
@@ -1419,24 +1671,42 @@ function renderAddToCartErrors(errors) {
   container.classList.add("is-visible");
 }
 
+function renderCheckoutShippingErrors(errors) {
+  const container = document.getElementById("checkoutShippingErrors");
+  if (!container) return;
+
+  if (!errors || errors.length === 0) {
+    clearCheckoutShippingErrors();
+    return;
+  }
+
+  const listItems = errors.map((message) => `<li>${message}</li>`).join("");
+  container.innerHTML = `<ul>${listItems}</ul>`;
+  container.classList.add("is-visible");
+}
+
 function validateAddToCart() {
   const errors = [];
-  const deliveryName = document.getElementById("deliveryNameSelect").value;
-  const address = document.getElementById("shippingAddress").value.trim();
+  const isDepartmentOrder = orderData.orderType === "department";
   const confirmed =
     document.getElementById("confirmChecked") &&
     document.getElementById("confirmChecked").checked;
 
-  if (!deliveryName) {
-    errors.push("Please select a name of delivery.");
-  }
+  if (isDepartmentOrder) {
+    const deliveryName = document.getElementById("deliveryNameSelect").value;
+    const address = document.getElementById("shippingAddress").value.trim();
 
-  if (!address) {
-    errors.push("Please enter a shipping address.");
-  }
+    if (!deliveryName) {
+      errors.push("Please select a name of delivery.");
+    }
 
-  if (!orderData.shipping) {
-    errors.push("Please select a shipping option.");
+    if (!address) {
+      errors.push("Please enter a shipping address.");
+    }
+
+    if (!orderData.shipping) {
+      errors.push("Please select a shipping option.");
+    }
   }
 
   if (!confirmed) {
@@ -1453,6 +1723,7 @@ function validateAddToCart() {
 
 function addToCart() {
   clearAddToCartErrors();
+  updateGarmentPriceBasedOnQuantity();
 
   const validationResult = validateAddToCart();
   if (!validationResult.isValid) {
@@ -1460,13 +1731,22 @@ function addToCart() {
     return;
   }
 
-  const deliveryName = document.getElementById("deliveryNameSelect").value;
-  const address = document.getElementById("shippingAddress").value.trim();
+  const isDepartmentOrder = orderData.orderType === "department";
+  const deliveryName = isDepartmentOrder
+    ? document.getElementById("deliveryNameSelect").value
+    : INDIVIDUAL_SHIPPING_NOTE;
+  const address = isDepartmentOrder
+    ? document.getElementById("shippingAddress").value.trim()
+    : "";
+  const shippingType = isDepartmentOrder ? orderData.shipping : "";
+  const shippingPrice = isDepartmentOrder ? orderData.shippingPrice : 0;
 
   // Save current order to cart
   const orderCopy = JSON.parse(JSON.stringify(orderData));
   orderCopy.deliveryName = deliveryName;
   orderCopy.shippingAddress = address;
+  orderCopy.shipping = shippingType;
+  orderCopy.shippingPrice = shippingPrice;
   orderCopy.orderNumber = orderCart.length + 1;
   orderCopy.id = Date.now(); // Unique ID for editing
   orderCart.push(orderCopy);
@@ -1477,7 +1757,11 @@ function addToCart() {
   // Reset form for new order
   resetForm();
   document.getElementById('cartDropdown').style.display = 'none';
-  showSuccessToast("Order added to cart. You can add another order now.");
+  showSuccessToast(
+    isDepartmentOrder
+      ? "Department order added to cart. You can add another order now."
+      : "Individual order added to cart. Shipping will be entered at checkout.",
+  );
 }
 
 // Remove order from cart
@@ -1528,9 +1812,16 @@ function editOrderFromCart(index) {
     logo: order.logo,
     decorationName: order.decorationName,
     decorationDepartment: order.decorationDepartment,
-    personalizationItems: order.personalizationItems,
-    shipping: "",
-    shippingPrice: 0,
+    personalizationItems: order.personalizationItems || [],
+    selectedSize: order.selectedSize || "",
+    selectedQuantity: Math.max(parseInt(order.selectedQuantity, 10) || 1, 1),
+    totalGarmentPrice:
+      typeof order.totalGarmentPrice === "number"
+        ? order.totalGarmentPrice
+        : 0,
+    shipping: order.shipping || "",
+    shippingPrice:
+      order.orderType === "department" ? (order.shippingPrice || 0) : 0,
   };
 
   // Populate form fields
@@ -1544,9 +1835,19 @@ function editOrderFromCart(index) {
   if (order.orderType === "department") {
     document.getElementById("deptSelectSection1").style.display = "block";
     document.getElementById("departmentSelect").value = order.department;
+
+    document.getElementById("deliveryNameSelect").value = order.deliveryName || "";
+    document.getElementById("shippingAddress").value = order.shippingAddress || "";
+    if (order.shipping) {
+      selectShipping(order.shipping);
+    } else {
+      resetPerOrderShippingState();
+    }
   } else {
     document.getElementById("deptSelectSection1").style.display = "none";
+    resetPerOrderShippingState();
   }
+  updateSection3ShippingUI();
 
   // Set garment
   document.getElementById("garmentSelect").value = order.garment;
@@ -1598,6 +1899,125 @@ function editOrderFromCart(index) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function openCheckoutShippingModal() {
+  const modal = document.getElementById("checkoutShippingModal");
+  if (!modal) return;
+
+  const individualOrderCount = orderCart.filter(
+    (order) => order.orderType === "individual",
+  ).length;
+  const departmentOrderCount = orderCart.length - individualOrderCount;
+  const summary = document.getElementById("checkoutShippingSummary");
+  if (summary) {
+    const orderSummary =
+      departmentOrderCount > 0
+        ? `${individualOrderCount} individual and ${departmentOrderCount} department order(s)`
+        : `${individualOrderCount} individual order(s)`;
+    summary.textContent = `Cart has ${orderSummary}. Current total before shared individual shipping: $${calculateCartTotal().toFixed(2)}.`;
+  }
+
+  checkoutShippingData = {
+    shipping: "",
+    shippingPrice: 0,
+  };
+  document.getElementById("checkoutDeliveryNameSelect").value = "";
+  document.getElementById("checkoutShippingAddress").value = "";
+  document.querySelectorAll('input[name="checkoutShipping"]').forEach((input) => {
+    input.checked = false;
+    const option = input.closest(".shipping-option");
+    if (option) {
+      option.classList.remove("selected");
+    }
+  });
+  clearCheckoutShippingErrors();
+  updateCheckoutModalTotals(0);
+
+  modal.style.display = "flex";
+}
+
+function closeCheckoutShippingModal() {
+  const modal = document.getElementById("checkoutShippingModal");
+  if (!modal) return;
+  modal.style.display = "none";
+  clearCheckoutShippingErrors();
+}
+
+function validateCheckoutSharedShipping() {
+  const errors = [];
+  const deliveryName = document.getElementById("checkoutDeliveryNameSelect").value;
+  const shippingAddress = document
+    .getElementById("checkoutShippingAddress")
+    .value.trim();
+
+  if (!deliveryName) {
+    errors.push("Please select a name of delivery.");
+  }
+
+  if (!shippingAddress) {
+    errors.push("Please enter a shipping address.");
+  }
+
+  if (!checkoutShippingData.shipping) {
+    errors.push("Please select a shipping option.");
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    deliveryName,
+    shippingAddress,
+    shipping: checkoutShippingData.shipping,
+    shippingPrice: checkoutShippingData.shippingPrice,
+  };
+}
+
+function finalizeCheckout(ordersToSubmit, finalTotal) {
+  console.log("Checking out orders:", ordersToSubmit);
+  alert(
+    `Thank you! ${orderCart.length} order(s) have been submitted successfully. Final total: $${finalTotal.toFixed(2)}.`,
+  );
+  orderCart = [];
+  saveCart();
+  resetForm();
+  closeCheckoutShippingModal();
+  // Close cart dropdown
+  document.getElementById('cartDropdown').style.display = 'none';
+}
+
+function confirmCheckoutWithSharedShipping() {
+  const validationResult = validateCheckoutSharedShipping();
+  if (!validationResult.isValid) {
+    renderCheckoutShippingErrors(validationResult.errors);
+    return;
+  }
+
+  const individualOrders = orderCart.filter(
+    (order) => order.orderType === "individual",
+  );
+  const finalTotal = calculateCartTotal(validationResult.shippingPrice);
+  const confirmed = confirm(
+    `You are about to submit ${orderCart.length} order(s).\nShared shipping for ${individualOrders.length} individual order(s): $${validationResult.shippingPrice.toFixed(2)}\nFinal total: $${finalTotal.toFixed(2)}\nDo you want to proceed?`,
+  );
+  if (!confirmed) return;
+
+  const ordersToSubmit = orderCart.map((order) => {
+    if (order.orderType !== "individual") {
+      return order;
+    }
+
+    return {
+      ...order,
+      deliveryName: validationResult.deliveryName,
+      shippingAddress: validationResult.shippingAddress,
+      shipping: validationResult.shipping,
+      shippingPrice: 0,
+      sharedShippingAtCheckout: true,
+    };
+  });
+
+  finalizeCheckout(ordersToSubmit, finalTotal);
+}
+
 // Checkout all orders
 function checkout() {
   if (orderCart.length === 0) {
@@ -1605,15 +2025,20 @@ function checkout() {
     return;
   }
 
-  const confirmed = confirm(`You are about to submit ${orderCart.length} order(s). Do you want to proceed?`);
+  const hasIndividualOrders = orderCart.some(
+    (order) => order.orderType === "individual",
+  );
+  if (hasIndividualOrders) {
+    openCheckoutShippingModal();
+    return;
+  }
+
+  const finalTotal = calculateCartTotal();
+  const confirmed = confirm(
+    `You are about to submit ${orderCart.length} order(s).\nFinal total: $${finalTotal.toFixed(2)}\nDo you want to proceed?`,
+  );
   if (confirmed) {
-    console.log("Checking out orders:", orderCart);
-    alert(`Thank you! ${orderCart.length} order(s) have been submitted successfully.`);
-    orderCart = [];
-    saveCart();
-    resetForm();
-    // Close cart dropdown
-    document.getElementById('cartDropdown').style.display = 'none';
+    finalizeCheckout(orderCart, finalTotal);
   }
 }
 
@@ -1632,6 +2057,9 @@ function resetForm() {
     decorationName: "",
     decorationDepartment: "",
     personalizationItems: [],
+    selectedSize: "",
+    selectedQuantity: 1,
+    totalGarmentPrice: 0,
     shipping: "",
     shippingPrice: 0,
   };
@@ -1660,12 +2088,7 @@ function resetForm() {
   document.getElementById("decorationDeptSelect").value = "";
 
   // Reset section 3
-  document.getElementById("deliveryNameSelect").value = "";
-  document.getElementById("shippingAddress").value = "";
-  document.querySelectorAll('input[name="shipping"]').forEach((input) => {
-    input.checked = false;
-    input.closest(".shipping-option").classList.remove("selected");
-  });
+  resetPerOrderShippingState();
   document.getElementById("confirmChecked").checked = false;
   clearAddToCartErrors();
 
@@ -1682,6 +2105,8 @@ function resetForm() {
   // Disable continue buttons
   document.getElementById("next1").disabled = true;
   document.getElementById("next2").disabled = true;
+  updateSection3ShippingUI();
+  updateFinalTotal();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
