@@ -2,619 +2,784 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Garment Order Form</title>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Essential Energy | Garment Order Checkout</title>
+    <link rel="stylesheet" href="style.css" />
 </head>
 
 <body>
-    <div class="container">
-        <header class="header">
-            <h1>Essential Energy Garment Order Form</h1>
-            <p>Complete your personalized uniform order</p>
-            <div style="margin-top:8px; display: flex; justify-content: center; align-items: center; gap: 16px;">
-                <a href="#" id="viewSizeGuides" style="color:white">View size guides</a>
-                <!-- Cart Icon -->
-                <div style="position: relative;">
-                    <button id="cartIcon" onclick="toggleCartDropdown()"
-                        style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 20px; position: relative;">
-                        🛒
-                        <span id="cartBadge"
-                            style="position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; font-size: 11px; font-weight: bold; padding: 2px 6px; border-radius: 10px; display: none;">0</span>
-                    </button>
-                    <!-- Cart Dropdown -->
-                    <div id="cartDropdown"
-                        style="display: none; position: absolute; right: 0; top: 100%; margin-top: 8px; background: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); min-width: 350px; max-height: 500px; overflow-y: auto; z-index: 1000;">
-                        <div style="padding: 16px; border-bottom: 1px solid var(--border);">
-                            <h3 style="margin: 0; color: var(--text);">Your Cart</h3>
-                        </div>
-                        <div id="cartDropdownItems" style="padding: 8px;">
-                            <!-- Cart items will be inserted here -->
-                        </div>
-                        <div id="cartDropdownFooter"
-                            style="padding: 16px; border-top: 1px solid var(--border); background: var(--bg-light);">
-                            <div
-                                style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 16px; font-weight: bold;">
-                                <span>Total:</span>
-                                <span id="cartDropdownTotal" class="price">$0.00</span>
-                            </div>
-                            <div id="cartShippingNote"
-                                style="display: none; margin-bottom: 12px; font-size: 12px; color: var(--text-light);">
-                            </div>
-                            <button type="button" class="btn btn-primary" onclick="checkout()"
-                                style="width: 100%;">Checkout</button>
-                            <button type="button" class="btn btn-secondary" onclick="clearCart()"
-                                style="width: 100%; margin-top: 8px;">Clear Cart</button>
-                        </div>
+    <!-- App Shell -->
+    <div class="app">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar__inner">
+                <div class="brand">
+                    <div class="brand__mark" aria-hidden="true">EE</div>
+                    <div class="brand__text">
+                        <div class="brand__title">Essential Energy</div>
+                        <div class="brand__sub">Garment Ordering Portal</div>
                     </div>
+                </div>
+
+                <div class="topbar__actions">
+                    <button class="linklike" id="viewSizeGuides" type="button">
+                        View size guides
+                    </button>
+
+                    <button class="cartBtn" id="cartBtn" type="button" aria-haspopup="dialog"
+                        aria-controls="cartDrawer">
+                        <span class="cartBtn__icon" aria-hidden="true">🛒</span>
+                        <span class="cartBtn__label">Cart</span>
+                        <span class="cartBtn__total" id="headerCartTotal">$0.00</span>
+                        <span class="badge" id="cartBadge" style="display: none">0</span>
+                    </button>
                 </div>
             </div>
         </header>
 
-        <nav class="progress-bar" aria-label="Order progress">
-            <div class="progress-steps" role="list">
-                <div class="progress-step active" id="step1" role="listitem" aria-current="step">
-                    <div class="step-circle">1</div>
-                    <div class="step-label">Order Type</div>
-                </div>
-                <div class="progress-step" id="step2" role="listitem">
-                    <div class="step-circle">2</div>
-                    <div class="step-label">Garment & Decoration</div>
-                </div>
-                <div class="progress-step" id="step3" role="listitem">
-                    <div class="step-circle">3</div>
-                    <div class="step-label">Shipping</div>
-                </div>
-            </div>
-        </nav>
-
-        <main>
-            <form id="orderForm" novalidate>
-                <div class="form-content">
-
-                    <!-- Section 1: Order Type & Depot -->
-                    <section class="section active" id="section1" aria-labelledby="section1-title">
-                        <div class="alert">
-                            <div class="alert-icon">ℹ️</div>
-                            <div class="alert-content">
-                                <h3>Important Notice</h3>
-                                <p>This order form works for <strong>one depot at a time</strong>. You
-                                    will have the option once you've completed to come back and add another
-                                    garment for another depot.</p>
-                            </div>
-                        </div>
-
-                        <h2 class="section-title" id="section1-title">Order Information</h2>
-
-                        <div class="form-group">
-                            <label class="form-label required">Is this order for an individual or for a
-                                department?</label>
-                            <div class="radio-group">
-                                <label class="radio-option" onclick="selectOrderType('individual', this)">
-                                    <input type="radio" name="orderType" value="individual">
-                                    <div class="option-details">
-                                        <div class="option-title">Individual Person</div>
-                                    </div>
-                                </label>
-                                <label class="radio-option" onclick="selectOrderType('department', this)">
-                                    <input type="radio" name="orderType" value="department">
-                                    <div class="option-details">
-                                        <div class="option-title">Department (Multiple People)</div>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label required">Cost Centre <span style="font-weight:400;">(if you are
-                                    unsure please ask your supervisor)</span></label>
-                            <select class="select-input" id="depot" onchange="selectDepot()">
-                                <option value="">Select cost centre...</option>
-                                <option value="174 NORTH STREET|ALBURY|NSW|2640">Albury (174 North Street)</option>
-                                <option value="32-56 GALLOWAY STREET|ARMIDALE|NSW|2350">Armidale (32-56 Galloway Street)
-                                </option>
-                                <option value="41 CANAL ROAD|BALLINA|NSW|2478">Ballina (41 Canal Road)</option>
-                                <option value="130 KERRISONS LANE|BEGA|NSW|2550">Bega (130 Kerrisons Lane)</option>
-                                <option value="4 LAWSON STREET|BLAYNEY|NSW|2799">Blayney (4 Lawson Street)</option>
-                                <option value="55 FORBES STREET|BOMBALA|NSW|2580">Bombala (55 Forbes Street)</option>
-                                <option value="37 GILLAMATONG LANE|BRAIDWOOD|NSW|2622">Braidwood (37 Gillamatong Lane)
-                                </option>
-                                <option value="610 WOLFRAM STREET|BROKEN HILL|NSW|2390">Broken Hill (610 Wolfram Street)
-                                </option>
-                                <option value="41 CORBETT AVENUE|BURONGA|NSW|2739">Buronga (41 Corbett Avenue)</option>
-                                <option value="1-7 POLO FLATE ROAD|COOMA|NSW|2630">Cooma (1-7 Polo Flate Road)</option>
-                                <option value="30 MCINTOSH ROAD|CROOKWELL|NSW|2583">Crookwell (30 McIntosh Road)
-                                </option>
-                                <option value="401-417 CALIMO STREET|DENILIQUIN|NSW|2705">Deniliquin (401-417 Calimo
-                                    Street)</option>
-                                <option value="17 HAWTHORN STREET|DUBBO|NSW|2830">Dubbo (17 Hawthorn Street)</option>
-                                <option value="23 HAWTHORN STREET|DUBBO|NSW|2830">Dubbo (23 Hawthorn Street)</option>
-                                <option value="59-87 HAMMOND AVE|EAST WAGGA WAGGA|NSW|2650">East Wagga Wagga (59-87
-                                    Hammond Ave)</option>
-                                <option value="10 RICHMOND AVENUE|FAIRBAIRN|ATC|2609">Fairbairn (10 Richmond Avenue)
-                                </option>
-                                <option value="25-27 MEMORIAL ROAD|GOULBURN|NSW|2580">Goulburn (25-27 Memorial Road)
-                                </option>
-                                <option value="112 QUEEN STREET|GRAFTON|NSW|2460">Grafton (112 Queen Street)</option>
-                                <option value="187 LAWRENCE ROAD|GRAFTON|NSW|2460">Grafton (187 Lawrence Road)</option>
-                                <option value="91 SALEYARDS ROAD|HARDEN|NSW|2587">Harden (91 Saleyards Road)</option>
-                                <option value="25 BURTENSHAW ROAD|INVERELL|NSW|2360">Inverell (25 Burtenshaw Road)
-                                </option>
-                                <option value="21 HAMPDEN PARK ROAD|KELSO|NSW|2795">Kelso (21 Hampden Park Road)
-                                </option>
-                                <option value="82 WEST STREET|KEMPSEY|NSW|2440">Kempsey (82 West Street)</option>
-                                <option value="11 CRAIG STREET|KYOGLE|NSW|2474">Kyogle (11 Craig Street)</option>
-                                <option value="7 BRADY WAY|LEETON|NSW|2705">Leeton (7 Brady Way)</option>
-                                <option value="26 PAPERBARK DRIVE|MACLEAN|NSW|2463">Maclean (26 Paperbark Drive)
-                                </option>
-                                <option value="43 WATSON STREET|MOLONG|NSW|2866">Molong (43 Watson Street)</option>
-                                <option value="210 ARALUEN ROAD|MORUYA|NSW|2537">Moruya (210 Araluen Road)</option>
-                                <option value="22 BURRUNDULLA ROAD|MUDGEE|NSW|2850">Mudgee (22 Burrundulla Road)
-                                </option>
-                                <option value="1 LOGAN STREET|NARRABRI|NSW|2390">Narrabri (1 Logan Street)</option>
-                                <option value="48 NYMAGEE STREET|NARROMINE|NSW|2821">Narromine (48 Nymagee Street)
-                                </option>
-                                <option value="10 FORGE DRIVE|NORTH BOAMBEE VALLEY COFFS HARBOUR|NSW|2450">North Boambee
-                                    Valley Coffs Harbour (10 Forge Drive)</option>
-                                <option value="6 DERRIBONG STREET|NYNGAN|NSW|2825">Nyngan (6 Derribong Street)</option>
-                                <option value="2 LORDS PLACE|ORANGE|NSW|2800">Orange (2 Lords Place)</option>
-                                <option value="61-77 BROLGAN ROAD|PARKES|NSW|2870">Parkes (61-77 Brolgan Road)</option>
-                                <option value="8 BULLER STREET|PORT MACQUARIE|NSW|2444">Port Macquarie (8 Buller Street)
-                                </option>
-                                <option value="115 HINDMAN STREET|PORT MACQUARIE|NSW|2444">Port Macquarie (115 Hindman
-                                    Street)</option>
-                                <option value="2 DUKE STREET|QUIRINDI|NSW|2343">Quirindi (2 Duke Street)</option>
-                                <option value="244 UNION STREET|SOUTH LISMORE|NSW|2480">South Lismore (244 Union Street)
-                                </option>
-                                <option value="16/227 ELIZABETH STREET|SYDNEY|NSW|2000">Sydney (16/227 Elizabeth Street)
-                                </option>
-                                <option value="2A ELECTRA STREET|TAMWORTH|NSW|2340">Tamworth (2A Electra Street)
-                                </option>
-                                <option value="38 WHITBREAD STREET|TAREE|NSW|2430">Taree (38 Whitbread Street)</option>
-                                <option value="26 CADELL STREET|TEXAS|QLD|4385">Texas (26 Cadell Street)</option>
-                                <option value="41-53 MERIVALE STREE|TUMUT|NSW|2720">Tumut (41-53 Merivale Street)
-                                </option>
-                                <option value="39 SUNSHINE AVENUE|TWEEDS HEAD SOUTH|NSW|2486">Tweed's Head South (39
-                                    Sunshine Avenue)</option>
-                                <option value="345 BOOROWA STREET|YOUNG|NSW|2594">Young (345 Boorowa Street)</option>
-                                <option value="other">Other (please note - you will need prior approval if your depot is
-                                    not listed)</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group" id="deptSelectSection1" style="display: none;">
-                            <label class="form-label required">Department Name <span style="font-weight:400;">(if you
-                                    are
-                                    unsure please ask your supervisor)</span></label>
-                            <select class="select-input" id="departmentSelect" onchange="selectDepartment()">
-                                <option value="">Select department...</option>
-                                <option value="Asset and Operational Excellence">Asset and Operational Excellence
-                                </option>
-                                <option value="Asset Engineering">Asset Engineering</option>
-                                <option value="Assets & Operations Management">Assets & Operations Management</option>
-                                <option value="Coastal Operations">Coastal Operations</option>
-                                <option value="Commercial Design">Commercial Design</option>
-                                <option value="Commercial Services">Commercial Services</option>
-                                <option value="Contestable Network Solutions">Contestable Network Solutions</option>
-                                <option value="Contract Management Capability Program">Contract Management Capability
-                                    Program</option>
-                                <option value="Customer & Commerical">Customer & Commerical</option>
-                                <option value="Design Services">Design Services</option>
-                                <option value="Devops">Devops</option>
-                                <option value="Digital Asset Management">Digital Asset Management</option>
-                                <option value="Digital Delivery">Digital Delivery</option>
-                                <option value="Digital Services">Digital Services</option>
-                                <option value="Electric Vehicle Transition">Electric Vehicle Transition</option>
-                                <option value="Electrical Safety Office">Electrical Safety Office</option>
-                                <option value="Finance Division">Finance Division</option>
-                                <option value="Fleet Team">Fleet Team</option>
-                                <option value="Frontline Mobility">Frontline Mobility</option>
-                                <option value="Future Networks">Future Networks</option>
-                                <option value="Governance & Corporate Services">Governance & Corporate Services</option>
-                                <option value="Graduate Program">Graduate Program</option>
-                                <option value="Innovation Team">Innovation Team</option>
-                                <option value="Inventory & Logistics">Inventory & Logistics</option>
-                                <option value="Learning & Capability">Learning & Capability</option>
-                                <option value="Location + Midnorth Coast Operations">Location + Midnorth Coast
-                                    Operations</option>
-                                <option value="Major Projects and Transmission">Major Projects and Transmission</option>
-                                <option value="Major Projects and Transmission Services">Major Projects and Transmission
-                                    Services</option>
-                                <option value="Meter 2 Cash">Meter 2 Cash</option>
-                                <option value="Midnorth Coast Operations">Midnorth Coast Operations</option>
-                                <option value="MSM Team">MSM Team</option>
-                                <option value="Murray Operations">Murray Operations</option>
-                                <option value="Network Design">Network Design</option>
-                                <option value="Network Development">Network Development</option>
-                                <option value="Network Investment and Maintenance">Network Investment and Maintenance
-                                </option>
-                                <option value="Network Planning">Network Planning</option>
-                                <option value="Network Planning and Development">Network Planning and Development
-                                </option>
-                                <option value="Network Services">Network Services</option>
-                                <option value="Network Substation and Design">Network Substation and Design</option>
-                                <option value="North West Operations">North West Operations</option>
-                                <option value="Operational Services">Operational Services</option>
-                                <option value="Operations">Operations</option>
-                                <option value="Outage Management Group">Outage Management Group</option>
-                                <option value="People & Safety">People & Safety</option>
-                                <option value="People Operations and Planning">People Operations and Planning</option>
-                                <option value="Portfolio Services">Portfolio Services</option>
-                                <option value="Procurement">Procurement</option>
-                                <option value="Property">Property</option>
-                                <option value="Riverina Slopes">Riverina Slopes</option>
-                                <option value="South Eastern Operations">South Eastern Operations</option>
-                                <option value="Strategy and Future Networks">Strategy and Future Networks</option>
-                                <option value="Telbu">Telbu</option>
-                                <option value="Transmission Services">Transmission Services</option>
-                                <option value="Vegatation Operations">Vegatation Operations</option>
-                                <option value="Works Delivery & Specilised Services">Works Delivery & Specilised
-                                    Services</option>
-                                <option value="Zone Substation Engineering">Zone Substation Engineering</option>
-                                <option value="other">Other (please note - you will need prior approval if your
-                                    department is not listed)</option>
-                            </select>
-                        </div>
-
-                        <div class="button-group">
-                            <button class="btn btn-primary" type="button" onclick="nextSection(1)" id="next1"
-                                disabled>Continue</button>
-                        </div>
-                    </section>
-
-                    <!-- Section 2: Choose Garment -->
-                    <section class="section" id="section2" aria-labelledby="section2-title">
-                        <h2 class="section-title" id="section2-title">Choose Your Garment</h2>
-
-                        <div class="reminder-note">
-                            <strong>Reminder:</strong>
-                            You will need to add one garment type at a time. Once you have added this garment to the
-                            cart, you will have an option to come back and add another if you need to.
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label required">Select garment type</label>
-                            <select class="select-input" id="garmentSelect" onchange="selectGarment(this.value)">
-                                <option value="">Select garment...</option>
-                                <option value="mens-polo-xs-5xl">Mens Polo 1065</option>
-                                <option value="mens-polo-5xl-10xl">Mens Polo JB210</option>
-                                <option value="womens-polo-xs-2xl">Ladies Polo JH201W</option>
-                                <option value="womens-polo-20-26">Ladies Polo 1165</option>
-                                <option value="premium-unisex-tech-jacket-2xl-5xl">Podium Unisex Tech Jacket</option>
-                                <option value="mens-olympus-softshell-jacket-s-8xl">Mens Olympus Softshell Jacket
-                                </option>
-                                <option value="ladies-olympus-softshell-jacket-8-26">Ladies Olympus Softshell Jacket
-                                </option>
-                            </select>
-                        </div>
-
-                        <!-- Size selection and quantity -->
-                        <div class="form-group" id="sizeSelectionGroup" style="display: none;">
-                            <label class="form-label required">Select Size & Quantity</label>
-                            <div class="grid-2">
-                                <select class="select-input" id="sizeSelect" onchange="selectSize(this.value)">
-                                    <option value="">Select size...</option>
-                                </select>
-                                <input type="number" class="number-input" id="quantityInput" min="1" value="1"
-                                    placeholder="Quantity" oninput="updateQuantity(this.value)">
-                            </div>
-                        </div>
-
-                        <!-- Price selection dropdown -->
-                        <div class="form-group" id="priceSelectionGroup" style="display: none;">
-                            <label class="form-label required">Select Price Tier</label>
-                            <select class="select-input" id="priceTierSelect" onchange="selectPriceTier(this.value)">
-                                <option value="">Select quantity tier...</option>
-                            </select>
-                        </div>
-
-                        <!-- Single unit price display -->
-                        <div class="form-group" id="priceDisplayGroup" style="display: none;">
-                            <label class="form-label">Unit Price</label>
-                            <input type="text" id="garmentPriceInput" class="text-input" readonly />
-                        </div>
-
-                        <!-- Decoration option dropdown -->
-                        <div class="form-group">
-                            <label class="form-label required">Select decoration option</label>
-                            <select class="select-input" id="decorationSelect" onchange="selectDecoration(this.value)">
-                                <option value="">Select decoration...</option>
-                                <option value="logo-only">Embroider - Logo only (RHC)</option>
-                                <option value="logo-name">Embroider - Logo + Individual person's name (LHC)</option>
-                                <option value="name-only">Embroider - Individual person's name only (RHC)</option>
-                                <option value="dept-only">Embroider - Name of department only</option>
-                                <option value="dept-name">Embroider - Individual person's name & name of department
-                                </option>
-                            </select>
-                        </div>
-
-                        <!-- Logo selection dropdown (shown only for logo-based decorations) -->
-                        <div class="form-group" id="logoSelectionGroup" style="display: none;">
-                            <label class="form-label required">Select Logo</label>
-                            <select class="select-input" id="logoSelect" onchange="selectLogo(this.value)">
-                                <option value="">Select logo...</option>
-                                <option value="Essential Energy logo">Essential Energy logo</option>
-                                <option value="Metre 2 Cash logo">Metre 2 Cash logo</option>
-                            </select>
-                            <p style="margin-top: 8px; font-size: 14px; color: #64748b; font-style: italic;">
-                                If your logo is not listed here please contact your cost centre
+        <!-- Main Content -->
+        <main class="main">
+            <div class="checkoutLayout">
+                <!-- LEFT: Checkout Flow -->
+                <section class="flow">
+                    <div class="panel panel--hero">
+                        <div class="hero">
+                            <h1 class="hero__title">Garment Order Checkout</h1>
+                            <p class="hero__subtitle">
+                                Create one order at a time, add to cart, then submit all orders
+                                together.
                             </p>
-                        </div>
 
-                        <!-- Name input field (shown for logo-name, name-only, dept-name) -->
-                        <div class="form-group" id="nameInputGroup" style="display: none;">
-                            <label class="form-label required">Individual Person's Name</label>
-                            <input type="text" class="text-input" id="decorationNameInput"
-                                placeholder="Enter person's name" oninput="saveDecorationName(this.value)">
-                            <label
-                                style="margin-top: 10px; display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #64748b;">
-                                <input type="checkbox" id="nameApprovalChecked" required
-                                    onchange="saveNameApproval(this.checked)">
-                                <span>
-                                    All garment individualisations have been approved by the relevant cost centre.
-                                    BlackDog Ink takes no responsibility for un-approved customisations ie: nicknames,
-                                    abbreviated names etc.
-                                </span>
-                            </label>
-                        </div>
-
-                        <!-- Department selection dropdown (shown for dept-only, dept-name) -->
-                        <div class="form-group" id="deptSelectionGroup" style="display: none;">
-                            <label class="form-label required">Select Department</label>
-                            <select class="select-input" id="decorationDeptSelect"
-                                onchange="saveDecorationDepartment(this.value)">
-                                <option value="">Select department...</option>
-                                <option value="Asset and Operational Excellence">Asset and Operational Excellence
-                                </option>
-                                <option value="Asset Engineering">Asset Engineering</option>
-                                <option value="Assets & Operations Management">Assets & Operations Management</option>
-                                <option value="Coastal Operations">Coastal Operations</option>
-                                <option value="Commercial Design">Commercial Design</option>
-                                <option value="Commercial Services">Commercial Services</option>
-                                <option value="Contestable Network Solutions">Contestable Network Solutions</option>
-                                <option value="Contract Management Capability Program">Contract Management Capability
-                                    Program</option>
-                                <option value="Customer & Commerical">Customer & Commerical</option>
-                                <option value="Design Services">Design Services</option>
-                                <option value="Devops">Devops</option>
-                                <option value="Digital Asset Management">Digital Asset Management</option>
-                                <option value="Digital Delivery">Digital Delivery</option>
-                                <option value="Digital Services">Digital Services</option>
-                                <option value="Electric Vehicle Transition">Electric Vehicle Transition</option>
-                                <option value="Electrical Safety Office">Electrical Safety Office</option>
-                                <option value="Finance Division">Finance Division</option>
-                                <option value="Fleet Team">Fleet Team</option>
-                                <option value="Frontline Mobility">Frontline Mobility</option>
-                                <option value="Future Networks">Future Networks</option>
-                                <option value="Governance & Corporate Services">Governance & Corporate Services</option>
-                                <option value="Graduate Program">Graduate Program</option>
-                                <option value="Innovation Team">Innovation Team</option>
-                                <option value="Inventory & Logistics">Inventory & Logistics</option>
-                                <option value="Learning & Capability">Learning & Capability</option>
-                                <option value="Location + Midnorth Coast Operations">Location + Midnorth Coast
-                                    Operations</option>
-                                <option value="Major Projects and Transmission">Major Projects and Transmission</option>
-                                <option value="Major Projects and Transmission Services">Major Projects and Transmission
-                                    Services</option>
-                                <option value="Meter 2 Cash">Meter 2 Cash</option>
-                                <option value="Midnorth Coast Operations">Midnorth Coast Operations</option>
-                                <option value="MSM Team">MSM Team</option>
-                                <option value="Murray Operations">Murray Operations</option>
-                                <option value="Network Design">Network Design</option>
-                                <option value="Network Development">Network Development</option>
-                                <option value="Network Investment and Maintenance">Network Investment and Maintenance
-                                </option>
-                                <option value="Network Planning">Network Planning</option>
-                                <option value="Network Planning and Development">Network Planning and Development
-                                </option>
-                                <option value="Network Services">Network Services</option>
-                                <option value="Network Substation and Design">Network Substation and Design</option>
-                                <option value="North West Operations">North West Operations</option>
-                                <option value="Operational Services">Operational Services</option>
-                                <option value="Operations">Operations</option>
-                                <option value="Outage Management Group">Outage Management Group</option>
-                                <option value="People & Safety">People & Safety</option>
-                                <option value="People Operations and Planning">People Operations and Planning</option>
-                                <option value="Portfolio Services">Portfolio Services</option>
-                                <option value="Procurement">Procurement</option>
-                                <option value="Property">Property</option>
-                                <option value="Riverina Slopes">Riverina Slopes</option>
-                                <option value="South Eastern Operations">South Eastern Operations</option>
-                                <option value="Strategy and Future Networks">Strategy and Future Networks</option>
-                                <option value="Telbu">Telbu</option>
-                                <option value="Transmission Services">Transmission Services</option>
-                                <option value="Vegatation Operations">Vegatation Operations</option>
-                                <option value="Works Delivery & Specilised Services">Works Delivery & Specilised
-                                    Services</option>
-                                <option value="Zone Substation Engineering">Zone Substation Engineering</option>
-                                <option value="other">Other (please note - you will need prior approval if your
-                                    department is not listed)</option>
-                            </select>
-                        </div>
-
-                        <div class="button-group">
-                            <button class="btn btn-secondary" type="button" onclick="prevSection(2)">Back</button>
-                            <button class="btn btn-primary" type="button" onclick="nextSection(2)" id="next2"
-                                disabled>Continue</button>
-                        </div>
-                    </section>
-
-                    <!-- Section 3: Review & Checkout -->
-                    <section class="section" id="section3" aria-labelledby="section3-title">
-                        <h2 class="section-title" id="section3-title">Review Your Order</h2>
-
-                        <div class="order-summary">
-                            <div class="summary-title">Current Order Details</div>
-                            <div id="orderSummaryContent"></div>
-                        </div>
-
-                        <div class="form-group" style="margin-top: 12px;">
-                            <label class="form-label required">Please confirm</label>
-                            <div>
-                                <input type="checkbox" id="confirmChecked"> I confirm I have checked all personalisation
-                                details (spelling etc). BlackDog is not responsible for mistakes made on this order
-                                form.
-                            </div>
-                        </div>
-
-                        <div id="individualShippingNotice" class="checkout-note"
-                            style="display: none; margin-top: 32px;">
-                            This is an <strong>Individual</strong> order. Shipping details will be collected once at
-                            checkout and applied to all individual orders in your cart.
-                        </div>
-
-                        <div id="departmentShippingFields">
-                            <div class="form-group" style="margin-top: 32px;">
-                                <label class="form-label required">Name on Delivery</label>
-                                <input type="text" class="text-input" id="deliveryNameSelect" required
-                                    placeholder="Enter name on delivery">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label required">Shipping Address</label>
-                                <input type="text" class="text-input" id="shippingAddress"
-                                    placeholder="Enter depot address for delivery">
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label required">Select Shipping Option</label>
-                                <div id="shippingOptions">
-                                    <label class="shipping-option" onclick="selectShipping('small', this)">
-                                        <div>
-                                            <input type="radio" name="shipping" value="small">
-                                            <span><strong>Small Postage Bag</strong> (1 shirt)</span>
-                                        </div>
-                                        <span class="price">$15.50</span>
-                                    </label>
-                                    <label class="shipping-option" onclick="selectShipping('medium', this)">
-                                        <div>
-                                            <input type="radio" name="shipping" value="medium">
-                                            <span><strong>Medium Postage Bag</strong> (2 shirts)</span>
-                                        </div>
-                                        <span class="price">$18.00</span>
-                                    </label>
-                                    <label class="shipping-option" onclick="selectShipping('large', this)">
-                                        <div>
-                                            <input type="radio" name="shipping" value="large">
-                                            <span><strong>Large Postage Bag</strong> (1 jacket, 1 shirt)</span>
-                                        </div>
-                                        <span class="price">$20.00</span>
-                                    </label>
-                                    <label class="shipping-option" onclick="selectShipping('xl', this)">
-                                        <div>
-                                            <input type="radio" name="shipping" value="xl">
-                                            <span><strong>XL Postage Bag</strong> (2 jackets)</span>
-                                        </div>
-                                        <span class="price">$25.00</span>
-                                    </label>
-                                    <label class="shipping-option" onclick="selectShipping('freight', this)">
-                                        <div>
-                                            <input type="radio" name="shipping" value="freight">
-                                            <span><strong>Local Freight</strong> per box/satchel to Buller St PMQ</span>
-                                        </div>
-                                        <span class="price">$12.00</span>
-                                    </label>
+                            <div class="notice">
+                                <div class="notice__icon" aria-hidden="true">ℹ️</div>
+                                <div class="notice__content">
+                                    <div class="notice__title">Important</div>
+                                    <div class="notice__text">
+                                        This form creates <strong>one depot / cost centre order</strong>
+                                        at a time. After adding to cart, you can add more.
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="order-summary">
-                            <div class="summary-total">
-                                <span id="finalTotalLabel">Order Total:</span>
-                                <span id="finalTotal" class="price">$0.00</span>
+                    <!-- Stepper -->
+                    <div class="panel">
+                        <div class="stepper" role="list" aria-label="Checkout steps">
+                            <button class="step step--active" id="step1" type="button" data-step="1">
+                                <span class="step__dot">1</span>
+                                <span class="step__text">
+                                    <span class="step__title">Order Type</span>
+                                    <span class="step__desc">Who is this for?</span>
+                                </span>
+                            </button>
+
+                            <button class="step" id="step2" type="button" data-step="2">
+                                <span class="step__dot">2</span>
+                                <span class="step__text">
+                                    <span class="step__title">Garment</span>
+                                    <span class="step__desc">Size, quantity & decoration</span>
+                                </span>
+                            </button>
+
+                            <button class="step" id="step3" type="button" data-step="3">
+                                <span class="step__dot">3</span>
+                                <span class="step__text">
+                                    <span class="step__title">Review</span>
+                                    <span class="step__desc">Confirm & add to cart</span>
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- FORM -->
+                    <form id="orderForm" novalidate>
+                        <!-- SECTION 1 -->
+                        <section class="panel section section--active" id="section1" aria-labelledby="s1-title">
+                            <div class="panel__header">
+                                <h2 class="panel__title" id="s1-title">Order information</h2>
+                                <p class="panel__subtitle">Select the order type and cost centre.</p>
+                            </div>
+
+                            <div class="fields">
+                                <div class="field">
+                                    <label class="label required">Is this order for an individual or a
+                                        department?</label>
+                                    <div class="choiceGrid">
+                                        <label class="choiceCard" data-choice="orderType" data-value="individual">
+                                            <input type="radio" name="orderType" value="individual" />
+                                            <div class="choiceCard__body">
+                                                <div class="choiceCard__title">Individual Person</div>
+                                                <div class="choiceCard__desc">Shipping collected once at checkout.</div>
+                                            </div>
+                                        </label>
+
+                                        <label class="choiceCard" data-choice="orderType" data-value="department">
+                                            <input type="radio" name="orderType" value="department" />
+                                            <div class="choiceCard__body">
+                                                <div class="choiceCard__title">Department</div>
+                                                <div class="choiceCard__desc">Shipping per department order.</div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label required">
+                                        Cost Centre <span class="muted">(If unsure, ask your supervisor)</span>
+                                    </label>
+                                    <select class="select" id="depot">
+                                        <option value="">Select cost centre...</option>
+                                        <option value="174 NORTH STREET|ALBURY|NSW|2640">Albury (174 North Street)
+                                        </option>
+                                        <option value="32-56 GALLOWAY STREET|ARMIDALE|NSW|2350">Armidale (32-56 Galloway
+                                            Street)</option>
+                                        <option value="41 CANAL ROAD|BALLINA|NSW|2478">Ballina (41 Canal Road)</option>
+                                        <option value="130 KERRISONS LANE|BEGA|NSW|2550">Bega (130 Kerrisons Lane)
+                                        </option>
+                                        <option value="4 LAWSON STREET|BLAYNEY|NSW|2799">Blayney (4 Lawson Street)
+                                        </option>
+                                        <option value="55 FORBES STREET|BOMBALA|NSW|2580">Bombala (55 Forbes Street)
+                                        </option>
+                                        <option value="37 GILLAMATONG LANE|BRAIDWOOD|NSW|2622">Braidwood (37 Gillamatong
+                                            Lane)</option>
+                                        <option value="610 WOLFRAM STREET|BROKEN HILL|NSW|2390">Broken Hill (610 Wolfram
+                                            Street)</option>
+                                        <option value="41 CORBETT AVENUE|BURONGA|NSW|2739">Buronga (41 Corbett Avenue)
+                                        </option>
+                                        <option value="1-7 POLO FLATE ROAD|COOMA|NSW|2630">Cooma (1-7 Polo Flate Road)
+                                        </option>
+                                        <option value="30 MCINTOSH ROAD|CROOKWELL|NSW|2583">Crookwell (30 McIntosh Road)
+                                        </option>
+                                        <option value="401-417 CALIMO STREET|DENILIQUIN|NSW|2705">Deniliquin (401-417
+                                            Calimo Street)</option>
+                                        <option value="17 HAWTHORN STREET|DUBBO|NSW|2830">Dubbo (17 Hawthorn Street)
+                                        </option>
+                                        <option value="23 HAWTHORN STREET|DUBBO|NSW|2830">Dubbo (23 Hawthorn Street)
+                                        </option>
+                                        <option value="59-87 HAMMOND AVE|EAST WAGGA WAGGA|NSW|2650">East Wagga Wagga
+                                            (59-87 Hammond Ave)</option>
+                                        <option value="10 RICHMOND AVENUE|FAIRBAIRN|ATC|2609">Fairbairn (10 Richmond
+                                            Avenue)</option>
+                                        <option value="25-27 MEMORIAL ROAD|GOULBURN|NSW|2580">Goulburn (25-27 Memorial
+                                            Road)</option>
+                                        <option value="112 QUEEN STREET|GRAFTON|NSW|2460">Grafton (112 Queen Street)
+                                        </option>
+                                        <option value="187 LAWRENCE ROAD|GRAFTON|NSW|2460">Grafton (187 Lawrence Road)
+                                        </option>
+                                        <option value="91 SALEYARDS ROAD|HARDEN|NSW|2587">Harden (91 Saleyards Road)
+                                        </option>
+                                        <option value="25 BURTENSHAW ROAD|INVERELL|NSW|2360">Inverell (25 Burtenshaw
+                                            Road)</option>
+                                        <option value="21 HAMPDEN PARK ROAD|KELSO|NSW|2795">Kelso (21 Hampden Park Road)
+                                        </option>
+                                        <option value="82 WEST STREET|KEMPSEY|NSW|2440">Kempsey (82 West Street)
+                                        </option>
+                                        <option value="11 CRAIG STREET|KYOGLE|NSW|2474">Kyogle (11 Craig Street)
+                                        </option>
+                                        <option value="7 BRADY WAY|LEETON|NSW|2705">Leeton (7 Brady Way)</option>
+                                        <option value="26 PAPERBARK DRIVE|MACLEAN|NSW|2463">Maclean (26 Paperbark Drive)
+                                        </option>
+                                        <option value="43 WATSON STREET|MOLONG|NSW|2866">Molong (43 Watson Street)
+                                        </option>
+                                        <option value="210 ARALUEN ROAD|MORUYA|NSW|2537">Moruya (210 Araluen Road)
+                                        </option>
+                                        <option value="22 BURRUNDULLA ROAD|MUDGEE|NSW|2850">Mudgee (22 Burrundulla Road)
+                                        </option>
+                                        <option value="1 LOGAN STREET|NARRABRI|NSW|2390">Narrabri (1 Logan Street)
+                                        </option>
+                                        <option value="48 NYMAGEE STREET|NARROMINE|NSW|2821">Narromine (48 Nymagee
+                                            Street)</option>
+                                        <option value="10 FORGE DRIVE|NORTH BOAMBEE VALLEY COFFS HARBOUR|NSW|2450">North
+                                            Boambee Valley Coffs Harbour (10 Forge Drive)</option>
+                                        <option value="6 DERRIBONG STREET|NYNGAN|NSW|2825">Nyngan (6 Derribong Street)
+                                        </option>
+                                        <option value="2 LORDS PLACE|ORANGE|NSW|2800">Orange (2 Lords Place)</option>
+                                        <option value="61-77 BROLGAN ROAD|PARKES|NSW|2870">Parkes (61-77 Brolgan Road)
+                                        </option>
+                                        <option value="8 BULLER STREET|PORT MACQUARIE|NSW|2444">Port Macquarie (8 Buller
+                                            Street)</option>
+                                        <option value="115 HINDMAN STREET|PORT MACQUARIE|NSW|2444">Port Macquarie (115
+                                            Hindman Street)</option>
+                                        <option value="2 DUKE STREET|QUIRINDI|NSW|2343">Quirindi (2 Duke Street)
+                                        </option>
+                                        <option value="244 UNION STREET|SOUTH LISMORE|NSW|2480">South Lismore (244 Union
+                                            Street)</option>
+                                        <option value="16/227 ELIZABETH STREET|SYDNEY|NSW|2000">Sydney (16/227 Elizabeth
+                                            Street)</option>
+                                        <option value="2A ELECTRA STREET|TAMWORTH|NSW|2340">Tamworth (2A Electra Street)
+                                        </option>
+                                        <option value="38 WHITBREAD STREET|TAREE|NSW|2430">Taree (38 Whitbread Street)
+                                        </option>
+                                        <option value="26 CADELL STREET|TEXAS|QLD|4385">Texas (26 Cadell Street)
+                                        </option>
+                                        <option value="41-53 MERIVALE STREE|TUMUT|NSW|2720">Tumut (41-53 Merivale
+                                            Street)</option>
+                                        <option value="39 SUNSHINE AVENUE|TWEEDS HEAD SOUTH|NSW|2486">Tweed's Head South
+                                            (39 Sunshine Avenue)</option>
+                                        <option value="345 BOOROWA STREET|YOUNG|NSW|2594">Young (345 Boorowa Street)
+                                        </option>
+                                        <option value="other">Other (approval required)</option>
+                                    </select>
+                                </div>
+
+                                <div class="field" id="deptSelectSection1" style="display: none">
+                                    <label class="label required">
+                                        Department Name <span class="muted">(If unsure, ask your supervisor)</span>
+                                    </label>
+                                    <select class="select" id="departmentSelect">
+                                        <option value="">Select department...</option>
+                                        <!-- Keep your same department list -->
+                                        <option value="Asset and Operational Excellence">Asset and Operational
+                                            Excellence</option>
+                                        <option value="Asset Engineering">Asset Engineering</option>
+                                        <option value="Assets & Operations Management">Assets & Operations Management
+                                        </option>
+                                        <option value="Coastal Operations">Coastal Operations</option>
+                                        <option value="Commercial Design">Commercial Design</option>
+                                        <option value="Commercial Services">Commercial Services</option>
+                                        <option value="Contestable Network Solutions">Contestable Network Solutions
+                                        </option>
+                                        <option value="Contract Management Capability Program">Contract Management
+                                            Capability Program</option>
+                                        <option value="Customer & Commerical">Customer & Commerical</option>
+                                        <option value="Design Services">Design Services</option>
+                                        <option value="Devops">Devops</option>
+                                        <option value="Digital Asset Management">Digital Asset Management</option>
+                                        <option value="Digital Delivery">Digital Delivery</option>
+                                        <option value="Digital Services">Digital Services</option>
+                                        <option value="Electric Vehicle Transition">Electric Vehicle Transition</option>
+                                        <option value="Electrical Safety Office">Electrical Safety Office</option>
+                                        <option value="Finance Division">Finance Division</option>
+                                        <option value="Fleet Team">Fleet Team</option>
+                                        <option value="Frontline Mobility">Frontline Mobility</option>
+                                        <option value="Future Networks">Future Networks</option>
+                                        <option value="Governance & Corporate Services">Governance & Corporate Services
+                                        </option>
+                                        <option value="Graduate Program">Graduate Program</option>
+                                        <option value="Innovation Team">Innovation Team</option>
+                                        <option value="Inventory & Logistics">Inventory & Logistics</option>
+                                        <option value="Learning & Capability">Learning & Capability</option>
+                                        <option value="Location + Midnorth Coast Operations">Location + Midnorth Coast
+                                            Operations</option>
+                                        <option value="Major Projects and Transmission">Major Projects and Transmission
+                                        </option>
+                                        <option value="Major Projects and Transmission Services">Major Projects and
+                                            Transmission Services</option>
+                                        <option value="Meter 2 Cash">Meter 2 Cash</option>
+                                        <option value="Midnorth Coast Operations">Midnorth Coast Operations</option>
+                                        <option value="MSM Team">MSM Team</option>
+                                        <option value="Murray Operations">Murray Operations</option>
+                                        <option value="Network Design">Network Design</option>
+                                        <option value="Network Development">Network Development</option>
+                                        <option value="Network Investment and Maintenance">Network Investment and
+                                            Maintenance</option>
+                                        <option value="Network Planning">Network Planning</option>
+                                        <option value="Network Planning and Development">Network Planning and
+                                            Development</option>
+                                        <option value="Network Services">Network Services</option>
+                                        <option value="Network Substation and Design">Network Substation and Design
+                                        </option>
+                                        <option value="North West Operations">North West Operations</option>
+                                        <option value="Operational Services">Operational Services</option>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Outage Management Group">Outage Management Group</option>
+                                        <option value="People & Safety">People & Safety</option>
+                                        <option value="People Operations and Planning">People Operations and Planning
+                                        </option>
+                                        <option value="Portfolio Services">Portfolio Services</option>
+                                        <option value="Procurement">Procurement</option>
+                                        <option value="Property">Property</option>
+                                        <option value="Riverina Slopes">Riverina Slopes</option>
+                                        <option value="South Eastern Operations">South Eastern Operations</option>
+                                        <option value="Strategy and Future Networks">Strategy and Future Networks
+                                        </option>
+                                        <option value="Telbu">Telbu</option>
+                                        <option value="Transmission Services">Transmission Services</option>
+                                        <option value="Vegatation Operations">Vegatation Operations</option>
+                                        <option value="Works Delivery & Specilised Services">Works Delivery & Specilised
+                                            Services</option>
+                                        <option value="Zone Substation Engineering">Zone Substation Engineering</option>
+                                        <option value="other">Other (approval required)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="actions">
+                                <button class="btn btn--primary" type="button" id="next1" disabled>
+                                    Continue
+                                </button>
+                            </div>
+                        </section>
+
+                        <!-- SECTION 2 -->
+                        <section class="panel section" id="section2" aria-labelledby="s2-title">
+                            <div class="panel__header">
+                                <h2 class="panel__title" id="s2-title">Garment & decoration</h2>
+                                <p class="panel__subtitle">Select garment, size, quantity, and embroidery options.</p>
+                            </div>
+
+                            <div class="fields">
+                                <div class="field">
+                                    <label class="label required">Select garment type</label>
+                                    <select class="select" id="garmentSelect">
+                                        <option value="">Select garment...</option>
+                                        <option value="mens-polo-xs-5xl">Mens Polo 1065</option>
+                                        <option value="mens-polo-5xl-10xl">Mens Polo JB210</option>
+                                        <option value="womens-polo-20-26">Ladies Polo 1165</option>
+                                        <option value="premium-unisex-tech-jacket-2xl-5xl">Podium Unisex Tech Jacket
+                                        </option>
+                                        <option value="mens-olympus-softshell-jacket-s-8xl">Mens Olympus Softshell
+                                            Jacket</option>
+                                        <option value="ladies-olympus-softshell-jacket-8-26">Ladies Olympus Softshell
+                                            Jacket</option>
+                                    </select>
+                                </div>
+
+                                <div class="field" id="sizeSelectionGroup" style="display: none">
+                                    <div class="grid2">
+                                        <div>
+                                            <label class="label">Measurement type <span
+                                                    class="muted">(optional)</span></label>
+                                            <select class="select" id="sizeMetricSelect">
+                                                <option value="">Select measurement...</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label class="label required">Size</label>
+                                            <select class="select" id="sizeSelect">
+                                                <option value="">Select size...</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="field" style="margin-top: 12px">
+                                        <label class="label required">Quantity</label>
+                                        <input class="input" id="quantityInput" type="number" min="1" value="1" />
+                                        <div class="hint">For tier pricing, quantity can be split across “people” later.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="field" id="priceSelectionGroup" style="display: none">
+                                    <label class="label required">Price tier</label>
+                                    <select class="select" id="priceTierSelect">
+                                        <option value="">Select quantity tier...</option>
+                                    </select>
+                                    <div class="hint">Tier can auto-adjust based on total quantities.</div>
+                                </div>
+
+                                <div class="field" id="priceDisplayGroup" style="display: none">
+                                    <label class="label">Unit price</label>
+                                    <input class="input" id="garmentPriceInput" type="text" readonly />
+                                </div>
+
+                                <div class="field">
+                                    <label class="label required">Decoration option</label>
+                                    <select class="select" id="decorationSelect">
+                                        <option value="">Select decoration...</option>
+                                        <option value="logo-only">Embroider - Logo only (RHC)</option>
+                                        <option value="logo-name">Embroider - Logo + individual name (LHC)</option>
+                                        <option value="name-only">Embroider - Individual name only (RHC)</option>
+                                        <option value="dept-only">Embroider - Department name only</option>
+                                        <option value="dept-name">Embroider - Individual name & department</option>
+                                    </select>
+                                </div>
+
+                                <div class="field" id="logoSelectionGroup" style="display: none">
+                                    <label class="label required">Select logo</label>
+                                    <select class="select" id="logoSelect">
+                                        <option value="">Select logo...</option>
+                                        <option value="Essential Energy logo">Essential Energy logo</option>
+                                        <option value="Metre 2 Cash logo">Metre 2 Cash logo</option>
+                                    </select>
+                                    <div class="hint">
+                                        If your logo is not listed, contact your cost centre.
+                                    </div>
+                                </div>
+
+                                <div class="field" id="nameInputGroup" style="display: none">
+                                    <label class="label required">Individual person's name</label>
+                                    <input class="input" type="text" id="decorationNameInput"
+                                        placeholder="Enter person's name" />
+
+                                    <label class="checkline">
+                                        <input type="checkbox" id="nameApprovalChecked" />
+                                        <span>
+                                            All individualisations have been approved by the relevant cost centre.
+                                            BlackDog Ink takes no responsibility for un-approved customisations
+                                            (nicknames, abbreviations, etc).
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <div class="field" id="deptSelectionGroup" style="display: none">
+                                    <label class="label required">Select department</label>
+                                    <select class="select" id="decorationDeptSelect">
+                                        <option value="">Select department...</option>
+                                        <option value="Asset and Operational Excellence">Asset and Operational
+                                            Excellence</option>
+                                        <option value="Asset Engineering">Asset Engineering</option>
+                                        <option value="Assets & Operations Management">Assets & Operations Management
+                                        </option>
+                                        <option value="Coastal Operations">Coastal Operations</option>
+                                        <option value="Commercial Design">Commercial Design</option>
+                                        <option value="Commercial Services">Commercial Services</option>
+                                        <option value="Contestable Network Solutions">Contestable Network Solutions
+                                        </option>
+                                        <option value="Contract Management Capability Program">Contract Management
+                                            Capability Program</option>
+                                        <option value="Customer & Commerical">Customer & Commerical</option>
+                                        <option value="Design Services">Design Services</option>
+                                        <option value="Devops">Devops</option>
+                                        <option value="Digital Asset Management">Digital Asset Management</option>
+                                        <option value="Digital Delivery">Digital Delivery</option>
+                                        <option value="Digital Services">Digital Services</option>
+                                        <option value="Electric Vehicle Transition">Electric Vehicle Transition</option>
+                                        <option value="Electrical Safety Office">Electrical Safety Office</option>
+                                        <option value="Finance Division">Finance Division</option>
+                                        <option value="Fleet Team">Fleet Team</option>
+                                        <option value="Frontline Mobility">Frontline Mobility</option>
+                                        <option value="Future Networks">Future Networks</option>
+                                        <option value="Governance & Corporate Services">Governance & Corporate Services
+                                        </option>
+                                        <option value="Graduate Program">Graduate Program</option>
+                                        <option value="Innovation Team">Innovation Team</option>
+                                        <option value="Inventory & Logistics">Inventory & Logistics</option>
+                                        <option value="Learning & Capability">Learning & Capability</option>
+                                        <option value="Location + Midnorth Coast Operations">Location + Midnorth Coast
+                                            Operations</option>
+                                        <option value="Major Projects and Transmission">Major Projects and Transmission
+                                        </option>
+                                        <option value="Major Projects and Transmission Services">Major Projects and
+                                            Transmission Services</option>
+                                        <option value="Meter 2 Cash">Meter 2 Cash</option>
+                                        <option value="Midnorth Coast Operations">Midnorth Coast Operations</option>
+                                        <option value="MSM Team">MSM Team</option>
+                                        <option value="Murray Operations">Murray Operations</option>
+                                        <option value="Network Design">Network Design</option>
+                                        <option value="Network Development">Network Development</option>
+                                        <option value="Network Investment and Maintenance">Network Investment and
+                                            Maintenance</option>
+                                        <option value="Network Planning">Network Planning</option>
+                                        <option value="Network Planning and Development">Network Planning and
+                                            Development</option>
+                                        <option value="Network Services">Network Services</option>
+                                        <option value="Network Substation and Design">Network Substation and Design
+                                        </option>
+                                        <option value="North West Operations">North West Operations</option>
+                                        <option value="Operational Services">Operational Services</option>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Outage Management Group">Outage Management Group</option>
+                                        <option value="People & Safety">People & Safety</option>
+                                        <option value="People Operations and Planning">People Operations and Planning
+                                        </option>
+                                        <option value="Portfolio Services">Portfolio Services</option>
+                                        <option value="Procurement">Procurement</option>
+                                        <option value="Property">Property</option>
+                                        <option value="Riverina Slopes">Riverina Slopes</option>
+                                        <option value="South Eastern Operations">South Eastern Operations</option>
+                                        <option value="Strategy and Future Networks">Strategy and Future Networks
+                                        </option>
+                                        <option value="Telbu">Telbu</option>
+                                        <option value="Transmission Services">Transmission Services</option>
+                                        <option value="Vegatation Operations">Vegatation Operations</option>
+                                        <option value="Works Delivery & Specilised Services">Works Delivery & Specilised
+                                            Services</option>
+                                        <option value="Zone Substation Engineering">Zone Substation Engineering</option>
+                                        <option value="other">Other (approval required)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="actions">
+                                <button class="btn btn--ghost" type="button" id="back2">Back</button>
+                                <button class="btn btn--primary" type="button" id="next2" disabled>Continue</button>
+                            </div>
+                        </section>
+
+                        <!-- SECTION 3 -->
+                        <section class="panel section" id="section3" aria-labelledby="s3-title">
+                            <div class="panel__header">
+                                <h2 class="panel__title" id="s3-title">Review & add to cart</h2>
+                                <p class="panel__subtitle">Confirm details and add this order to the cart.</p>
+                            </div>
+
+                            <div class="reviewGrid">
+                                <div class="reviewCard reviewCard--confirmation">
+                                    <div class="reviewCard__title">Confirmation</div>
+                                    <label class="checkline">
+                                        <input type="checkbox" id="confirmChecked" />
+                                        <span>
+                                            I confirm I have checked all personalisation details (spelling etc).
+                                            BlackDog is not responsible for mistakes made on this order form.
+                                        </span>
+                                    </label>
+
+                                    <div id="individualShippingNotice" class="infoBox" style="display: none">
+                                        <strong>Individual order:</strong> Shipping will be collected once at checkout
+                                        and applied to
+                                        all individual orders in your cart.
+                                    </div>
+
+                                    <div id="departmentShippingFields">
+                                        <div class="field" style="margin-top: 14px">
+                                            <label class="label required">Name on delivery</label>
+                                            <input class="input" id="deliveryNameSelect" type="text"
+                                                placeholder="Enter name on delivery" />
+                                        </div>
+
+                                        <div class="field">
+                                            <label class="label required">Shipping address</label>
+                                            <input class="input" id="shippingAddress" type="text"
+                                                placeholder="Enter depot address for delivery" />
+                                        </div>
+
+                                        <div class="field">
+                                            <label class="label required">Shipping option</label>
+                                            <div class="shipList" id="shippingOptions">
+                                                <label class="shipOption" data-ship="small">
+                                                    <input type="radio" name="shipping" value="small" />
+                                                    <span><strong>Small Postage Bag</strong> (1 shirt)</span>
+                                                    <span class="money">$15.50</span>
+                                                </label>
+                                                <label class="shipOption" data-ship="medium">
+                                                    <input type="radio" name="shipping" value="medium" />
+                                                    <span><strong>Medium Postage Bag</strong> (2 shirts)</span>
+                                                    <span class="money">$18.00</span>
+                                                </label>
+                                                <label class="shipOption" data-ship="large">
+                                                    <input type="radio" name="shipping" value="large" />
+                                                    <span><strong>Large Postage Bag</strong> (1 jacket, 1 shirt)</span>
+                                                    <span class="money">$20.00</span>
+                                                </label>
+                                                <label class="shipOption" data-ship="xl">
+                                                    <input type="radio" name="shipping" value="xl" />
+                                                    <span><strong>XL Postage Bag</strong> (2 jackets)</span>
+                                                    <span class="money">$25.00</span>
+                                                </label>
+                                                <label class="shipOption" data-ship="freight">
+                                                    <input type="radio" name="shipping" value="freight" />
+                                                    <span><strong>Local Freight</strong> (per box/satchel to Buller St
+                                                        PMQ)</span>
+                                                    <span class="money">$12.00</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="totalsMini">
+                                        <div class="totalsMini__row">
+                                            <span>Order total</span>
+                                            <span class="money" id="finalTotal">$0.00</span>
+                                        </div>
+                                        <div class="hint" id="finalTotalHint"></div>
+                                    </div>
+
+                                    <div id="addOrderErrors" class="errors" aria-live="polite"></div>
+                                </div>
+                            </div>
+
+                            <div class="actions">
+                                <button class="btn btn--ghost" type="button" id="back3">Back</button>
+                                <button class="btn btn--primary" type="button" id="addToCartBtn">
+                                    Add order to cart
+                                </button>
+                            </div>
+                        </section>
+                    </form>
+                </section>
+
+                <!-- RIGHT: Sticky Summary -->
+                <aside class="summary">
+                    <div class="sticky">
+                        <div class="panel summaryCard">
+                            <div class="summaryCard__header">
+                                <div>
+                                    <div class="summaryCard__title">Live summary</div>
+                                    <div class="summaryCard__sub">Always up to date</div>
+                                </div>
+                                <span class="pill" id="summaryCartCount">0 items</span>
+                            </div>
+
+                            <div class="summaryLines" id="liveSummaryLines">
+                                <div class="muted">Start building an order to see totals here.</div>
+                            </div>
+
+                            <div class="divider"></div>
+
+                            <div class="summaryTotals">
+                                <div class="summaryTotals__row">
+                                    <span>Cart subtotal</span>
+                                    <span class="money" id="summaryCartSubtotal">$0.00</span>
+                                </div>
+                                <div class="summaryTotals__row">
+                                    <span>Shared individual shipping</span>
+                                    <span class="money" id="summarySharedShip">$0.00</span>
+                                </div>
+                                <div class="summaryTotals__row summaryTotals__row--strong">
+                                    <span>Estimated total</span>
+                                    <span class="money" id="summaryCartGrand">$0.00</span>
+                                </div>
+
+                                <div class="hint" id="summaryShippingNote" style="margin-top: 10px"></div>
+                            </div>
+
+                            <div class="summaryActions">
+                                <button class="btn btn--primary" type="button" id="checkoutBtn">
+                                    Checkout cart
+                                </button>
+                                <button class="btn btn--ghost" type="button" id="clearCartBtn">
+                                    Clear cart
+                                </button>
                             </div>
                         </div>
 
-                        <div id="addOrderErrors" class="add-order-errors" aria-live="polite"></div>
-
-                        <div class="button-group">
-                            <button class="btn btn-secondary" type="button" onclick="prevSection(3)">Back</button>
-                            <button class="btn btn-primary" type="button" onclick="addToCart()">Add New Order</button>
+                        <div class="panel quickCart">
+                            <div class="panel__header panel__header--compact">
+                                <div class="panel__title">Cart items</div>
+                                <div class="panel__subtitle">Quick view</div>
+                            </div>
+                            <div id="quickCartItems" class="quickCart__items">
+                                <div class="muted">Your cart is empty.</div>
+                            </div>
                         </div>
-                    </section>
-
-                </div>
-            </form>
+                    </div>
+                </aside>
+            </div>
         </main>
+
+        <footer class="footer">
+            <div class="footer__inner">
+                <span>© Essential Energy</span>
+                <span class="muted">Enterprise checkout UI pattern</span>
+            </div>
+        </footer>
     </div>
-    <div id="checkoutShippingModal" class="checkout-modal" role="dialog" aria-modal="true"
-        aria-labelledby="checkoutShippingTitle" style="display: none;">
-        <div class="checkout-modal-card">
-            <h3 id="checkoutShippingTitle">Shipping Details for Individual Orders</h3>
-            <p id="checkoutShippingSummary" class="checkout-modal-subtitle"></p>
-            <div class="order-summary" style="margin-top: 16px;">
-                <div class="summary-total" style="margin-top: 0; padding-top: 0; border-top: none;">
-                    <span>Checkout Total:</span>
-                    <span id="checkoutGrandTotal" class="price">$0.00</span>
+
+    <!-- Cart Drawer -->
+    <div class="drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-label="Cart" style="display: none">
+        <div class="drawer__backdrop" data-close="drawer"></div>
+        <div class="drawer__panel">
+            <div class="drawer__header">
+                <div>
+                    <div class="drawer__title">Your cart</div>
+                    <div class="drawer__sub" id="drawerSub">0 orders</div>
                 </div>
+                <button class="iconBtn" type="button" data-close="drawer" aria-label="Close cart">✕</button>
             </div>
 
-            <div class="form-group" style="margin-top: 24px;">
-                <label class="form-label required">Name on Delivery</label>
-                <input type="text" class="text-input" id="checkoutDeliveryNameSelect"
-                    placeholder="Enter name on delivery">
+            <div class="drawer__body">
+                <div id="drawerItems" class="drawerItems"></div>
             </div>
 
-            <div class="form-group">
-                <label class="form-label required">Shipping Address</label>
-                <input type="text" class="text-input" id="checkoutShippingAddress"
-                    placeholder="Enter depot address for delivery">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label required">Select Shipping Option</label>
-                <div id="checkoutShippingOptions">
-                    <label class="shipping-option" onclick="selectCheckoutShipping('small', this)">
-                        <div>
-                            <input type="radio" name="checkoutShipping" value="small">
-                            <span><strong>Small Postage Bag</strong> (1 shirt)</span>
-                        </div>
-                        <span class="price">$15.50</span>
-                    </label>
-                    <label class="shipping-option" onclick="selectCheckoutShipping('medium', this)">
-                        <div>
-                            <input type="radio" name="checkoutShipping" value="medium">
-                            <span><strong>Medium Postage Bag</strong> (2 shirts)</span>
-                        </div>
-                        <span class="price">$18.00</span>
-                    </label>
-                    <label class="shipping-option" onclick="selectCheckoutShipping('large', this)">
-                        <div>
-                            <input type="radio" name="checkoutShipping" value="large">
-                            <span><strong>Large Postage Bag</strong> (1 jacket, 1 shirt)</span>
-                        </div>
-                        <span class="price">$20.00</span>
-                    </label>
-                    <label class="shipping-option" onclick="selectCheckoutShipping('xl', this)">
-                        <div>
-                            <input type="radio" name="checkoutShipping" value="xl">
-                            <span><strong>XL Postage Bag</strong> (2 jackets)</span>
-                        </div>
-                        <span class="price">$25.00</span>
-                    </label>
-                    <label class="shipping-option" onclick="selectCheckoutShipping('freight', this)">
-                        <div>
-                            <input type="radio" name="checkoutShipping" value="freight">
-                            <span><strong>Local Freight</strong> per box/satchel to Buller St PMQ</span>
-                        </div>
-                        <span class="price">$12.00</span>
-                    </label>
+            <div class="drawer__footer">
+                <div class="drawerTotals">
+                    <div class="drawerTotals__row">
+                        <span>Subtotal</span>
+                        <span class="money" id="drawerSubtotal">$0.00</span>
+                    </div>
+                    <div class="drawerTotals__row">
+                        <span>Shared individual shipping</span>
+                        <span class="money" id="drawerSharedShip">$0.00</span>
+                    </div>
+                    <div class="drawerTotals__row drawerTotals__row--strong">
+                        <span>Total</span>
+                        <span class="money" id="drawerGrandTotal">$0.00</span>
+                    </div>
+                    <div class="hint" id="drawerNote"></div>
                 </div>
-            </div>
 
-            <div id="checkoutShippingErrors" class="add-order-errors" aria-live="polite"></div>
-
-            <div class="button-group" style="margin-top: 20px; padding-top: 20px;">
-                <button class="btn btn-secondary" type="button" onclick="closeCheckoutShippingModal()">Cancel</button>
-                <button class="btn btn-primary" type="button" onclick="confirmCheckoutWithSharedShipping()">Submit
-                    Orders</button>
+                <div class="drawerActions">
+                    <button class="btn btn--primary" type="button" id="drawerCheckoutBtn">Checkout</button>
+                    <button class="btn btn--ghost" type="button" id="drawerClearBtn">Clear</button>
+                </div>
             </div>
         </div>
     </div>
-    <div id="successToast" class="success-toast" role="status" aria-live="polite"></div>
-    <script src="script.js"></script>
 
+    <!-- Checkout Shipping Modal (Individual shared shipping) -->
+    <div class="modal" id="checkoutShippingModal" role="dialog" aria-modal="true" aria-label="Shared shipping"
+        style="display: none">
+        <div class="modal__backdrop" data-close="checkoutModal"></div>
+        <div class="modal__card">
+            <div class="modal__header">
+                <div>
+                    <div class="modal__title">Shipping for individual orders</div>
+                    <div class="modal__sub" id="checkoutShippingSummary"></div>
+                </div>
+                <button class="iconBtn" type="button" data-close="checkoutModal" aria-label="Close">✕</button>
+            </div>
+
+            <div class="modal__body">
+                <div class="totalsMini">
+                    <div class="totalsMini__row">
+                        <span>Checkout total</span>
+                        <span class="money" id="checkoutGrandTotal">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="fields" style="margin-top: 16px">
+                    <div class="field">
+                        <label class="label required">Name on delivery</label>
+                        <input class="input" id="checkoutDeliveryNameSelect" type="text"
+                            placeholder="Enter name on delivery" />
+                    </div>
+
+                    <div class="field">
+                        <label class="label required">Shipping address</label>
+                        <input class="input" id="checkoutShippingAddress" type="text"
+                            placeholder="Enter depot address for delivery" />
+                    </div>
+
+                    <div class="field">
+                        <label class="label required">Shipping option</label>
+                        <div class="shipList" id="checkoutShippingOptions">
+                            <label class="shipOption" data-checkship="small">
+                                <input type="radio" name="checkoutShipping" value="small" />
+                                <span><strong>Small Postage Bag</strong> (1 shirt)</span>
+                                <span class="money">$15.50</span>
+                            </label>
+                            <label class="shipOption" data-checkship="medium">
+                                <input type="radio" name="checkoutShipping" value="medium" />
+                                <span><strong>Medium Postage Bag</strong> (2 shirts)</span>
+                                <span class="money">$18.00</span>
+                            </label>
+                            <label class="shipOption" data-checkship="large">
+                                <input type="radio" name="checkoutShipping" value="large" />
+                                <span><strong>Large Postage Bag</strong> (1 jacket, 1 shirt)</span>
+                                <span class="money">$20.00</span>
+                            </label>
+                            <label class="shipOption" data-checkship="xl">
+                                <input type="radio" name="checkoutShipping" value="xl" />
+                                <span><strong>XL Postage Bag</strong> (2 jackets)</span>
+                                <span class="money">$25.00</span>
+                            </label>
+                            <label class="shipOption" data-checkship="freight">
+                                <input type="radio" name="checkoutShipping" value="freight" />
+                                <span><strong>Local Freight</strong> (per box/satchel to Buller St PMQ)</span>
+                                <span class="money">$12.00</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="checkoutShippingErrors" class="errors" aria-live="polite"></div>
+            </div>
+
+            <div class="modal__footer">
+                <button class="btn btn--ghost" type="button" data-close="checkoutModal">Cancel</button>
+                <button class="btn btn--primary" type="button" id="confirmCheckoutBtn">Submit orders</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="script.js"></script>
 </body>
 
 </html>
