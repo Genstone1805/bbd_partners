@@ -876,6 +876,14 @@ body {
   gap: 10px;
   border-top: 1px solid rgba(15, 23, 42, 0.1);
 }
+.stripeCardElement {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.02);
+  padding: 12px;
+}
 
 /* Toast */
 .toast {

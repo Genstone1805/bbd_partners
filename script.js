@@ -34,6 +34,12 @@ let checkoutShippingData = {
   shipping: "",
   shippingPrice: 0,
 };
+let stripePublishableKey = "";
+let stripeConfigLoaded = false;
+let stripe = null;
+let stripeCardElement = null;
+let pendingStripeCheckout = null;
+let stripePaymentInProgress = false;
 
 // Initialize cart on page load
 function initCart() {
@@ -539,8 +545,10 @@ function validateSection1() {
 }
 
 // App wiring
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", async function () {
   initCart();
+  await loadStripeConfig();
+  initStripe();
   updateSection3ShippingUI();
   setActiveSection(1);
   validateSection1();
@@ -759,6 +767,10 @@ document.addEventListener("DOMContentLoaded", function () {
       confirmCheckoutWithSharedShipping,
     );
   }
+  const stripePayBtn = document.getElementById("stripePayBtn");
+  if (stripePayBtn) {
+    stripePayBtn.addEventListener("click", processStripePayment);
+  }
 
   const deliveryNameSelect = document.getElementById("deliveryNameSelect");
   if (deliveryNameSelect) {
@@ -813,6 +825,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (event.target.closest('[data-close="checkoutModal"]')) {
       closeCheckoutShippingModal();
+    }
+    if (event.target.closest('[data-close="paymentModal"]')) {
+      closeStripePaymentModal();
     }
   });
 });
@@ -2466,19 +2481,231 @@ function validateCheckoutSharedShipping() {
   };
 }
 
-function finalizeCheckout(ordersToSubmit, finalTotal) {
-  console.log("Checking out orders:", ordersToSubmit);
-  alert(
-    `Thank you! ${orderCart.length} order(s) have been submitted successfully. Final total: $${finalTotal.toFixed(2)}.`,
-  );
+function clearStripePaymentErrors() {
+  const container = document.getElementById("stripePaymentErrors");
+  if (!container) return;
+  container.innerHTML = "";
+  container.classList.remove("is-visible");
+}
+
+function renderStripePaymentErrors(messages) {
+  const container = document.getElementById("stripePaymentErrors");
+  if (!container) return;
+
+  const errors = Array.isArray(messages) ? messages : [messages];
+  const listItems = errors.map((message) => `<li>${message}</li>`).join("");
+  container.innerHTML = `<ul>${listItems}</ul>`;
+  container.classList.add("is-visible");
+}
+
+async function loadStripeConfig() {
+  if (stripeConfigLoaded && stripePublishableKey) {
+    return true;
+  }
+
+  try {
+    const response = await fetch("/api/config", {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+      cache: "no-store",
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+    const payload = contentType.includes("application/json")
+      ? await response.json()
+      : { error: await response.text() };
+
+    if (!response.ok || !payload.stripePublishableKey) {
+      throw new Error(
+        payload.error || "Unable to load Stripe configuration from server.",
+      );
+    }
+
+    stripePublishableKey = payload.stripePublishableKey;
+    stripeConfigLoaded = true;
+    return true;
+  } catch (error) {
+    console.error("Stripe config error:", error);
+    stripeConfigLoaded = false;
+    stripePublishableKey = "";
+    return false;
+  }
+}
+
+function initStripe() {
+  if (stripe && stripeCardElement) return true;
+
+  if (!stripePublishableKey) {
+    return false;
+  }
+  if (typeof window.Stripe !== "function") {
+    return false;
+  }
+
+  stripe = window.Stripe(stripePublishableKey);
+  const cardMount = document.getElementById("stripeCardElement");
+  if (!cardMount) return false;
+
+  const elements = stripe.elements();
+  stripeCardElement = elements.create("card", {
+    hidePostalCode: true,
+  });
+  stripeCardElement.mount("#stripeCardElement");
+
+  stripeCardElement.on("change", function (event) {
+    if (event.error) {
+      renderStripePaymentErrors(event.error.message);
+    } else {
+      clearStripePaymentErrors();
+    }
+  });
+
+  return true;
+}
+
+function openStripePaymentModal(ordersToSubmit, finalTotal) {
+  const modal = document.getElementById("stripePaymentModal");
+  const amountText = document.getElementById("stripePayAmount");
+
+  if (!modal || !amountText) return;
+
+  if (!initStripe()) {
+    alert("Unable to load Stripe. Please refresh and try again.");
+    return;
+  }
+
+  pendingStripeCheckout = {
+    ordersToSubmit: JSON.parse(JSON.stringify(ordersToSubmit)),
+    finalTotal,
+  };
+
+  amountText.textContent = `$${finalTotal.toFixed(2)}`;
+  clearStripePaymentErrors();
+  modal.style.display = "block";
+}
+
+function closeStripePaymentModal() {
+  if (stripePaymentInProgress) return;
+  const modal = document.getElementById("stripePaymentModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+  clearStripePaymentErrors();
+  pendingStripeCheckout = null;
+}
+
+async function processStripePayment() {
+  if (!pendingStripeCheckout) {
+    alert("No payment session found. Please start checkout again.");
+    return;
+  }
+  if (!stripe || !stripeCardElement) {
+    alert("Stripe is not ready. Please refresh and try again.");
+    return;
+  }
+  if (stripePaymentInProgress) return;
+
+  const payBtn = document.getElementById("stripePayBtn");
+  stripePaymentInProgress = true;
+  if (payBtn) {
+    payBtn.disabled = true;
+    payBtn.textContent = "Processing...";
+  }
+
+  try {
+    const cents = Math.round((pendingStripeCheckout.finalTotal || 0) * 100);
+    if (cents <= 0) {
+      throw new Error("Invalid payment amount.");
+    }
+
+    const response = await fetch("/api/create-payment-intent", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        amount: cents,
+        currency: "aud",
+      }),
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+    const payload = contentType.includes("application/json")
+      ? await response.json()
+      : { error: await response.text() };
+    if (!response.ok || !payload.clientSecret) {
+      throw new Error(
+        payload.error || "Could not start Stripe payment. Please try again.",
+      );
+    }
+
+    const result = await stripe.confirmCardPayment(payload.clientSecret, {
+      payment_method: {
+        card: stripeCardElement,
+      },
+    });
+
+    if (result.error) {
+      throw new Error(result.error.message || "Payment failed.");
+    }
+
+    if (!result.paymentIntent || result.paymentIntent.status !== "succeeded") {
+      throw new Error("Payment was not completed.");
+    }
+
+    completeCheckoutAfterPaymentSuccess(
+      pendingStripeCheckout.ordersToSubmit,
+      pendingStripeCheckout.finalTotal,
+      result.paymentIntent.id,
+    );
+  } catch (error) {
+    const message =
+      error && error.message
+        ? error.message
+        : "Payment failed. Please try again.";
+    renderStripePaymentErrors(message);
+    alert(`Payment failed: ${message}`);
+  } finally {
+    stripePaymentInProgress = false;
+    if (payBtn) {
+      payBtn.disabled = false;
+      payBtn.textContent = "Pay now";
+    }
+  }
+}
+
+function completeCheckoutAfterPaymentSuccess(
+  ordersToSubmit,
+  finalTotal,
+  paymentIntentId,
+) {
+  console.log("Checked out orders:", ordersToSubmit);
+  console.log("Stripe payment intent:", paymentIntentId);
+
+  alert(`Payment successful. Final total: $${finalTotal.toFixed(2)}.`);
+
   orderCart = [];
   saveCart();
   resetForm();
   closeCheckoutShippingModal();
+
+  const paymentModal = document.getElementById("stripePaymentModal");
+  if (paymentModal) {
+    paymentModal.style.display = "none";
+  }
+  clearStripePaymentErrors();
+  pendingStripeCheckout = null;
+
   const drawer = document.getElementById("cartDrawer");
   if (drawer) {
     drawer.style.display = "none";
   }
+}
+
+function finalizeCheckout(ordersToSubmit, finalTotal) {
+  openStripePaymentModal(ordersToSubmit, finalTotal);
 }
 
 function confirmCheckoutWithSharedShipping() {

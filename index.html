@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Essential Energy | Garment Order Checkout</title>
     <link rel="stylesheet" href="style.css" />
+    <script src="https://js.stripe.com/v3/"></script>
 </head>
 
 <body>
@@ -772,6 +773,41 @@
             <div class="modal__footer">
                 <button class="btn btn--ghost" type="button" data-close="checkoutModal">Cancel</button>
                 <button class="btn btn--primary" type="button" id="confirmCheckoutBtn">Submit orders</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stripe Payment Modal -->
+    <div class="modal" id="stripePaymentModal" role="dialog" aria-modal="true" aria-label="Stripe payment"
+        style="display: none">
+        <div class="modal__backdrop" data-close="paymentModal"></div>
+        <div class="modal__card">
+            <div class="modal__header">
+                <div>
+                    <div class="modal__title">Secure payment</div>
+                    <div class="modal__sub">Pay now with Stripe</div>
+                </div>
+                <button class="iconBtn" type="button" data-close="paymentModal" aria-label="Close">✕</button>
+            </div>
+
+            <div class="modal__body">
+                <div class="totalsMini">
+                    <div class="totalsMini__row">
+                        <span>Amount to pay</span>
+                        <span class="money" id="stripePayAmount">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="field" style="margin-top: 16px">
+                    <label class="label required">Card details</label>
+                    <div id="stripeCardElement" class="stripeCardElement"></div>
+                    <div id="stripePaymentErrors" class="errors" aria-live="polite" style="margin-top: 10px"></div>
+                </div>
+            </div>
+
+            <div class="modal__footer">
+                <button class="btn btn--ghost" type="button" data-close="paymentModal">Cancel</button>
+                <button class="btn btn--primary" type="button" id="stripePayBtn">Pay now</button>
             </div>
         </div>
     </div>
