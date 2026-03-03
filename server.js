@@ -20,50 +20,57 @@ if (!stripePublishableKey) {
 
 const stripe = Stripe(stripeSecretKey);
 
+function isAllowedDevOrigin(origin) {
+  if (!origin) return false;
+  try {
+    const parsed = new URL(origin);
+    const host = parsed.hostname.toLowerCase();
+    return host === "localhost" || host === "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
+function sanitizeReturnBaseUrl(value) {
+  if (!value) return null;
+  try {
+    const parsed = new URL(String(value));
+    if (!["http:", "https:"].includes(parsed.protocol)) return null;
+    const host = parsed.hostname.toLowerCase();
+    if (host !== "localhost" && host !== "127.0.0.1") return null;
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return null;
+  }
+}
+
+function getBaseUrl(req, returnBaseUrl) {
+  if (returnBaseUrl) return returnBaseUrl.replace(/\/+$/, "");
+  if (appBaseUrl) return appBaseUrl.replace(/\/+$/, "");
+  return `${req.protocol}://${req.get("host")}`;
+}
+
 app.use(express.json());
+app.use((req, res, next) => {
+  const origin = req.get("origin");
+  if (origin && isAllowedDevOrigin(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Accept");
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+  return next();
+});
+
 app.use(express.static(path.join(__dirname)));
 
 app.get("/api/config", (req, res) => {
-  return res.json({
-    stripePublishableKey,
-  });
+  return res.json({ stripePublishableKey });
 });
-
-app.post("/api/create-payment-intent", async (req, res) => {
-  const amount = Number(req.body?.amount);
-  const currency = String(req.body?.currency || "aud").toLowerCase();
-
-  if (!Number.isInteger(amount) || amount <= 0) {
-    return res.status(400).json({ error: "Invalid amount." });
-  }
-
-  if (!/^[a-z]{3}$/.test(currency)) {
-    return res.status(400).json({ error: "Invalid currency." });
-  }
-
-  try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency,
-      automatic_payment_methods: { enabled: true },
-    });
-
-    return res.json({ clientSecret: paymentIntent.client_secret });
-  } catch (error) {
-    const message =
-      error && error.message
-        ? error.message
-        : "Unable to create payment intent.";
-    return res.status(500).json({ error: message });
-  }
-});
-
-function getBaseUrl(req) {
-  if (appBaseUrl) {
-    return appBaseUrl.replace(/\/+$/, "");
-  }
-  return `${req.protocol}://${req.get("host")}`;
-}
 
 app.post("/api/create-checkout-session", async (req, res) => {
   const amount = Number(req.body?.amount);
@@ -72,13 +79,13 @@ app.post("/api/create-checkout-session", async (req, res) => {
   if (!Number.isInteger(amount) || amount <= 0) {
     return res.status(400).json({ error: "Invalid amount." });
   }
-
   if (!/^[a-z]{3}$/.test(currency)) {
     return res.status(400).json({ error: "Invalid currency." });
   }
 
   try {
-    const baseUrl = getBaseUrl(req);
+    const returnBaseUrl = sanitizeReturnBaseUrl(req.body?.returnBaseUrl);
+    const baseUrl = getBaseUrl(req, returnBaseUrl);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       billing_address_collection: "required",
@@ -127,10 +134,10 @@ app.get("/api/checkout-session/:id", async (req, res) => {
   }
 });
 
-app.get("/", (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.listen(port, () => {
-  console.log(`Stripe demo server running on http://localhost:${port}`);
+  console.log(`Stripe app running on http://localhost:${port}`);
 });

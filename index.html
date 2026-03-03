@@ -737,33 +737,14 @@
 
                     <div class="field">
                         <label class="label required">Shipping option</label>
-                        <div class="shipList" id="checkoutShippingOptions">
-                            <label class="shipOption" data-checkship="small">
-                                <input type="radio" name="checkoutShipping" value="small" />
-                                <span><strong>Small Postage Bag</strong> (1 shirt)</span>
-                                <span class="money">$15.50</span>
-                            </label>
-                            <label class="shipOption" data-checkship="medium">
-                                <input type="radio" name="checkoutShipping" value="medium" />
-                                <span><strong>Medium Postage Bag</strong> (2 shirts)</span>
-                                <span class="money">$18.00</span>
-                            </label>
-                            <label class="shipOption" data-checkship="large">
-                                <input type="radio" name="checkoutShipping" value="large" />
-                                <span><strong>Large Postage Bag</strong> (1 jacket, 1 shirt)</span>
-                                <span class="money">$20.00</span>
-                            </label>
-                            <label class="shipOption" data-checkship="xl">
-                                <input type="radio" name="checkoutShipping" value="xl" />
-                                <span><strong>XL Postage Bag</strong> (2 jackets)</span>
-                                <span class="money">$25.00</span>
-                            </label>
-                            <label class="shipOption" data-checkship="freight">
-                                <input type="radio" name="checkoutShipping" value="freight" />
-                                <span><strong>Local Freight</strong> (per box/satchel to Buller St PMQ)</span>
-                                <span class="money">$12.00</span>
-                            </label>
-                        </div>
+                        <select class="input" id="checkoutShippingSelect">
+                            <option value="">Select shipping option...</option>
+                            <option value="small">Small Postage Bag (1 shirt) - $15.50</option>
+                            <option value="medium">Medium Postage Bag (2 shirts) - $18.00</option>
+                            <option value="large">Large Postage Bag (1 jacket, 1 shirt) - $20.00</option>
+                            <option value="xl">XL Postage Bag (2 jackets) - $25.00</option>
+                            <option value="freight">Local Freight (per box/satchel to Buller St PMQ) - $12.00</option>
+                        </select>
                     </div>
                 </div>
 
@@ -815,6 +796,10 @@
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+    <script>
+        // Optional: only set this when frontend is served separately (e.g. Live Server on :5500).
+        // window.API_BASE_URL = "http://localhost:4242";
+    </script>
     <script src="script.js"></script>
 </body>
 

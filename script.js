@@ -42,6 +42,14 @@ let pendingStripeCheckout = null;
 let stripePaymentInProgress = false;
 let stripeCheckoutRedirectInProgress = false;
 const PENDING_STRIPE_CHECKOUT_KEY = "pendingStripeCheckout";
+const DEFAULT_API_BASE_URL = "http://localhost:4242";
+const API_BASE_URL =
+  (typeof window.API_BASE_URL === "string" && window.API_BASE_URL.trim()) ||
+  (window.location.port === "5500" ? DEFAULT_API_BASE_URL : "");
+
+function apiUrl(path) {
+  return `${API_BASE_URL}${path}`;
+}
 
 // Initialize cart on page load
 function initCart() {
@@ -813,11 +821,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     checkoutAddressInput.addEventListener("input", clearCheckoutShippingErrors);
   }
 
-  document.querySelectorAll('input[name="checkoutShipping"]').forEach((input) => {
-    input.addEventListener("change", function () {
-      selectCheckoutShipping(this.value, this.closest(".shipOption"));
+  const checkoutShippingSelect = document.getElementById("checkoutShippingSelect");
+  if (checkoutShippingSelect) {
+    checkoutShippingSelect.addEventListener("change", function () {
+      selectCheckoutShipping(this.value);
     });
-  });
+  }
 
   document.addEventListener("click", function (event) {
     if (event.target.closest('[data-close="drawer"]')) {
@@ -2049,32 +2058,9 @@ function selectShipping(type, element) {
   updateFinalTotal();
 }
 
-function selectCheckoutShipping(type, element) {
+function selectCheckoutShipping(type) {
   checkoutShippingData.shipping = type;
   checkoutShippingData.shippingPrice = SHIPPING_PRICES[type] || 0;
-
-  const selectedInput = document.querySelector(
-    `input[name="checkoutShipping"][value="${type}"]`,
-  );
-  if (selectedInput) {
-    selectedInput.checked = true;
-  }
-
-  let selectedOption = element;
-  if (!selectedOption && selectedInput) {
-    selectedOption = selectedInput.closest(".shipOption");
-  }
-
-  document.querySelectorAll('input[name="checkoutShipping"]').forEach((input) => {
-    const option = input.closest(".shipOption");
-    if (option) {
-      option.classList.remove("shipOption--selected");
-    }
-  });
-
-  if (selectedOption) {
-    selectedOption.classList.add("shipOption--selected");
-  }
 
   clearCheckoutShippingErrors();
   updateCheckoutModalTotals(checkoutShippingData.shippingPrice);
@@ -2435,13 +2421,10 @@ function openCheckoutShippingModal() {
   };
   document.getElementById("checkoutDeliveryNameSelect").value = "";
   document.getElementById("checkoutShippingAddress").value = "";
-  document.querySelectorAll('input[name="checkoutShipping"]').forEach((input) => {
-    input.checked = false;
-    const option = input.closest(".shipOption");
-    if (option) {
-      option.classList.remove("shipOption--selected");
-    }
-  });
+  const checkoutShippingSelect = document.getElementById("checkoutShippingSelect");
+  if (checkoutShippingSelect) {
+    checkoutShippingSelect.value = "";
+  }
   clearCheckoutShippingErrors();
   updateCheckoutModalTotals(0);
 
@@ -2507,7 +2490,7 @@ async function loadStripeConfig() {
   }
 
   try {
-    const response = await fetch("/api/config", {
+    const response = await fetch(apiUrl("/api/config"), {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -2603,7 +2586,7 @@ async function handleStripeCheckoutReturn() {
 
   try {
     const response = await fetch(
-      `/api/checkout-session/${encodeURIComponent(sessionId)}`,
+      apiUrl(`/api/checkout-session/${encodeURIComponent(sessionId)}`),
       {
         method: "GET",
         headers: {
@@ -2648,9 +2631,22 @@ async function handleStripeCheckoutReturn() {
   removeStripeParamsFromUrl();
 }
 
+function onStripePaymentSuccess(_paymentDetails) {
+  alert("payment successful");
+}
+
 async function startStripeHostedCheckout(ordersToSubmit, finalTotal) {
   if (stripeCheckoutRedirectInProgress) {
     return;
+  }
+  if (!stripePublishableKey) {
+    const configLoaded = await loadStripeConfig();
+    if (!configLoaded) {
+      alert(
+        "Could not load Stripe configuration. Start the backend with 'npm start' and use http://localhost:4242.",
+      );
+      return;
+    }
   }
   if (!initStripe()) {
     alert("Unable to load Stripe. Please refresh and try again.");
@@ -2666,7 +2662,7 @@ async function startStripeHostedCheckout(ordersToSubmit, finalTotal) {
 
     savePendingStripeCheckout(ordersToSubmit, finalTotal);
 
-    const response = await fetch("/api/create-checkout-session", {
+    const response = await fetch(apiUrl("/api/create-checkout-session"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2674,6 +2670,7 @@ async function startStripeHostedCheckout(ordersToSubmit, finalTotal) {
       body: JSON.stringify({
         amount,
         currency: "aud",
+        returnBaseUrl: window.location.origin,
       }),
     });
 
@@ -2793,7 +2790,7 @@ async function processStripePayment() {
       throw new Error("Invalid payment amount.");
     }
 
-    const response = await fetch("/api/create-payment-intent", {
+    const response = await fetch(apiUrl("/api/create-payment-intent"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2856,8 +2853,11 @@ function completeCheckoutAfterPaymentSuccess(
 ) {
   console.log("Checked out orders:", ordersToSubmit);
   console.log("Stripe payment reference:", stripeReferenceId);
-
-  alert(`Payment successful. Final total: $${finalTotal.toFixed(2)}.`);
+  onStripePaymentSuccess({
+    ordersToSubmit,
+    finalTotal,
+    stripeReferenceId,
+  });
 
   orderCart = [];
   saveCart();

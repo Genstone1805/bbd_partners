@@ -2,7 +2,7 @@
   "name": "garment-order-checkout",
   "version": "1.0.0",
   "private": true,
-  "description": "Garment ordering portal with Stripe payment modal checkout",
+  "description": "Garment ordering portal with Stripe Checkout",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
