@@ -7,6 +7,7 @@ const app = express();
 const port = Number(process.env.PORT) || 4242;
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+const appBaseUrl = process.env.APP_BASE_URL;
 
 if (!stripeSecretKey) {
   console.error("Missing STRIPE_SECRET_KEY in environment.");
@@ -53,6 +54,75 @@ app.post("/api/create-payment-intent", async (req, res) => {
       error && error.message
         ? error.message
         : "Unable to create payment intent.";
+    return res.status(500).json({ error: message });
+  }
+});
+
+function getBaseUrl(req) {
+  if (appBaseUrl) {
+    return appBaseUrl.replace(/\/+$/, "");
+  }
+  return `${req.protocol}://${req.get("host")}`;
+}
+
+app.post("/api/create-checkout-session", async (req, res) => {
+  const amount = Number(req.body?.amount);
+  const currency = String(req.body?.currency || "aud").toLowerCase();
+
+  if (!Number.isInteger(amount) || amount <= 0) {
+    return res.status(400).json({ error: "Invalid amount." });
+  }
+
+  if (!/^[a-z]{3}$/.test(currency)) {
+    return res.status(400).json({ error: "Invalid currency." });
+  }
+
+  try {
+    const baseUrl = getBaseUrl(req);
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      billing_address_collection: "required",
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency,
+            unit_amount: amount,
+            product_data: {
+              name: "Garment Order Checkout",
+            },
+          },
+        },
+      ],
+      success_url: `${baseUrl}/?stripe=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${baseUrl}/?stripe=cancelled`,
+    });
+
+    return res.json({ sessionId: session.id });
+  } catch (error) {
+    const message =
+      error && error.message
+        ? error.message
+        : "Unable to create checkout session.";
+    return res.status(500).json({ error: message });
+  }
+});
+
+app.get("/api/checkout-session/:id", async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(req.params.id);
+    return res.json({
+      id: session.id,
+      paymentStatus: session.payment_status,
+      status: session.status,
+      amountTotal: session.amount_total,
+      currency: session.currency,
+    });
+  } catch (error) {
+    const message =
+      error && error.message
+        ? error.message
+        : "Unable to retrieve checkout session.";
     return res.status(500).json({ error: message });
   }
 });
