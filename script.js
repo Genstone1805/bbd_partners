@@ -20,8 +20,36 @@ let orderData = {
   shippingPrice: 0,
 };
 
-// Order cart to store multiple orders (load from localStorage)
-let orderCart = JSON.parse(localStorage.getItem('garmentOrderCart')) || [];
+const CART_STORAGE_KEY = "garmentOrderCart";
+
+function loadCartFromSessionStorage() {
+  const sessionCart = sessionStorage.getItem(CART_STORAGE_KEY);
+  if (sessionCart) {
+    try {
+      return JSON.parse(sessionCart) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  // One-time migration from old localStorage cart to sessionStorage.
+  const localCart = localStorage.getItem(CART_STORAGE_KEY);
+  if (localCart) {
+    try {
+      const parsed = JSON.parse(localCart) || [];
+      sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(parsed));
+      localStorage.removeItem(CART_STORAGE_KEY);
+      return parsed;
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+// Order cart to store multiple orders (load from sessionStorage)
+let orderCart = loadCartFromSessionStorage();
 const SHIPPING_PRICES = {
   small: 15.5,
   medium: 18.0,
@@ -51,15 +79,141 @@ function apiUrl(path) {
   return `${API_BASE_URL}${path}`;
 }
 
+let activeAppDialog = null;
+
+function resolveAppDialog(result) {
+  if (!activeAppDialog) return;
+
+  const { resolve, isConfirm, previousActiveElement } = activeAppDialog;
+  activeAppDialog = null;
+
+  const modal = document.getElementById("appDialogModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+
+  if (
+    previousActiveElement &&
+    typeof previousActiveElement.focus === "function"
+  ) {
+    previousActiveElement.focus();
+  }
+
+  if (isConfirm) {
+    resolve(Boolean(result));
+    return;
+  }
+  resolve();
+}
+
+function openAppDialog({
+  title = "Notice",
+  message = "",
+  confirmText = "OK",
+  cancelText = "Cancel",
+  variant = "info",
+  isConfirm = false,
+} = {}) {
+  const modal = document.getElementById("appDialogModal");
+  const titleElement = document.getElementById("appDialogTitle");
+  const messageElement = document.getElementById("appDialogMessage");
+  const iconElement = document.getElementById("appDialogIcon");
+  const confirmButton = document.getElementById("appDialogConfirmBtn");
+  const cancelButton = document.getElementById("appDialogCancelBtn");
+
+  if (
+    !modal ||
+    !titleElement ||
+    !messageElement ||
+    !iconElement ||
+    !confirmButton ||
+    !cancelButton
+  ) {
+    console.error("App dialog markup is missing.");
+    return Promise.resolve(isConfirm ? false : undefined);
+  }
+
+  if (activeAppDialog) {
+    resolveAppDialog(false);
+  }
+
+  titleElement.textContent = title;
+  messageElement.textContent = message;
+  confirmButton.textContent = confirmText;
+  cancelButton.textContent = cancelText;
+  cancelButton.style.display = isConfirm ? "inline-flex" : "none";
+
+  const iconMap = {
+    info: "i",
+    success: "✓",
+    warning: "!",
+    error: "!",
+  };
+  iconElement.textContent = iconMap[variant] || iconMap.info;
+  modal.setAttribute("data-variant", variant);
+  modal.style.display = "block";
+
+  return new Promise((resolve) => {
+    activeAppDialog = {
+      resolve,
+      isConfirm,
+      previousActiveElement: document.activeElement,
+    };
+    confirmButton.focus();
+  });
+}
+
+function showAppAlert(message, options = {}) {
+  return openAppDialog({
+    title: options.title || "Notice",
+    message,
+    confirmText: options.confirmText || "OK",
+    variant: options.variant || "info",
+    isConfirm: false,
+  });
+}
+
+function showAppConfirm(message, options = {}) {
+  return openAppDialog({
+    title: options.title || "Please Confirm",
+    message,
+    confirmText: options.confirmText || "Confirm",
+    cancelText: options.cancelText || "Cancel",
+    variant: options.variant || "warning",
+    isConfirm: true,
+  });
+}
+
+function initAppDialog() {
+  const confirmButton = document.getElementById("appDialogConfirmBtn");
+  const cancelButton = document.getElementById("appDialogCancelBtn");
+  const modal = document.getElementById("appDialogModal");
+
+  if (confirmButton) {
+    confirmButton.addEventListener("click", () => resolveAppDialog(true));
+  }
+  if (cancelButton) {
+    cancelButton.addEventListener("click", () => resolveAppDialog(false));
+  }
+  if (modal) {
+    modal.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        resolveAppDialog(false);
+      }
+    });
+  }
+}
+
 // Initialize cart on page load
 function initCart() {
   updateCartBadge();
   renderCartDropdown();
 }
 
-// Save cart to localStorage
+// Save cart to sessionStorage
 function saveCart() {
-  localStorage.setItem('garmentOrderCart', JSON.stringify(orderCart));
+  sessionStorage.setItem(CART_STORAGE_KEY, JSON.stringify(orderCart));
   updateCartBadge();
   renderCartDropdown();
 }
@@ -383,33 +537,51 @@ function nextSection(current) {
   // Validate section 2 before proceeding (garment and decoration must be selected)
   if (current === 2) {
     if (!orderData.garment) {
-      alert("Please select a garment type");
+      showAppAlert("Please select a garment type.", {
+        title: "Garment Required",
+        variant: "warning",
+      });
       return;
     }
     if (!orderData.decoration) {
-      alert("Please select a decoration option");
+      showAppAlert("Please select a decoration option.", {
+        title: "Decoration Required",
+        variant: "warning",
+      });
       return;
     }
     // Validate decoration-specific fields
     if (orderData.decoration === "logo-only" || orderData.decoration === "logo-name") {
       if (!orderData.logo) {
-        alert("Please select a logo");
+        showAppAlert("Please select a logo.", {
+          title: "Logo Required",
+          variant: "warning",
+        });
         return;
       }
     }
     if (orderData.decoration === "logo-name" || orderData.decoration === "name-only" || orderData.decoration === "dept-name") {
       if (!orderData.decorationName || orderData.decorationName.trim() === "") {
-        alert("Please enter the individual person's name");
+        showAppAlert("Please enter the individual person's name.", {
+          title: "Name Required",
+          variant: "warning",
+        });
         return;
       }
       if (!orderData.nameApprovalChecked) {
-        alert("Please confirm the cost centre approval disclaimer.");
+        showAppAlert("Please confirm the cost centre approval disclaimer.", {
+          title: "Approval Required",
+          variant: "warning",
+        });
         return;
       }
     }
     if (orderData.decoration === "dept-only" || orderData.decoration === "dept-name") {
       if (!orderData.decorationDepartment) {
-        alert("Please select a department");
+        showAppAlert("Please select a department.", {
+          title: "Department Required",
+          variant: "warning",
+        });
         return;
       }
     }
@@ -557,6 +729,7 @@ function validateSection1() {
 // App wiring
 document.addEventListener("DOMContentLoaded", async function () {
   initCart();
+  initAppDialog();
   await loadStripeConfig();
   initStripe();
   await handleStripeCheckoutReturn();
@@ -840,6 +1013,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
     if (event.target.closest('[data-close="paymentModal"]')) {
       closeStripePaymentModal();
+    }
+    if (event.target.closest('[data-close="appDialog"]')) {
+      resolveAppDialog(false);
     }
   });
 });
@@ -2226,7 +2402,7 @@ function addToCart() {
   orderCopy.id = Date.now(); // Unique ID for editing
   orderCart.push(orderCopy);
 
-  // Save to localStorage
+  // Save to sessionStorage
   saveCart();
 
   // Reset form for new order
@@ -2243,26 +2419,44 @@ function addToCart() {
 }
 
 // Remove order from cart
-function removeFromCart(index) {
-  if (confirm("Are you sure you want to remove this order from the cart?")) {
-    orderCart.splice(index, 1);
-    // Renumber orders
-    orderCart.forEach((order, i) => {
-      order.orderNumber = i + 1;
-    });
-    saveCart();
-  }
+async function removeFromCart(index) {
+  const confirmed = await showAppConfirm(
+    "Are you sure you want to remove this order from the cart?",
+    {
+      title: "Remove Order",
+      confirmText: "Remove",
+      cancelText: "Keep",
+      variant: "warning",
+    },
+  );
+  if (!confirmed) return;
+
+  orderCart.splice(index, 1);
+  // Renumber orders
+  orderCart.forEach((order, i) => {
+    order.orderNumber = i + 1;
+  });
+  saveCart();
 }
 
 // Clear entire cart
-function clearCart() {
-  if (confirm("Are you sure you want to clear all orders from the cart?")) {
-    orderCart = [];
-    saveCart();
-    const drawer = document.getElementById("cartDrawer");
-    if (drawer) {
-      drawer.style.display = "none";
-    }
+async function clearCart() {
+  const confirmed = await showAppConfirm(
+    "Are you sure you want to clear all orders from the cart?",
+    {
+      title: "Clear Cart",
+      confirmText: "Clear Cart",
+      cancelText: "Cancel",
+      variant: "warning",
+    },
+  );
+  if (!confirmed) return;
+
+  orderCart = [];
+  saveCart();
+  const drawer = document.getElementById("cartDrawer");
+  if (drawer) {
+    drawer.style.display = "none";
   }
 }
 
@@ -2567,7 +2761,10 @@ async function handleStripeCheckoutReturn() {
   if (stripeState === "cancelled") {
     clearPendingStripeCheckout();
     removeStripeParamsFromUrl();
-    alert("Stripe checkout was cancelled. Your cart is still saved.");
+    await showAppAlert("Stripe checkout was cancelled. Your cart is still saved.", {
+      title: "Checkout Cancelled",
+      variant: "warning",
+    });
     return;
   }
 
@@ -2580,7 +2777,10 @@ async function handleStripeCheckoutReturn() {
   const sessionId = params.get("session_id");
   if (!sessionId) {
     removeStripeParamsFromUrl();
-    alert("Stripe returned without a session ID. Please contact support.");
+    await showAppAlert("Stripe returned without a session ID. Please contact support.", {
+      title: "Missing Session",
+      variant: "error",
+    });
     return;
   }
 
@@ -2613,7 +2813,10 @@ async function handleStripeCheckoutReturn() {
         ? error.message
         : "Could not verify payment status.";
     removeStripeParamsFromUrl();
-    alert(`Payment verification failed: ${message}`);
+    await showAppAlert(`Payment verification failed: ${message}`, {
+      title: "Verification Failed",
+      variant: "error",
+    });
     return;
   }
 
@@ -2624,7 +2827,10 @@ async function handleStripeCheckoutReturn() {
       sessionId,
     );
   } else {
-    alert("Payment successful.");
+    await showAppAlert("Payment successful.", {
+      title: "Payment Complete",
+      variant: "success",
+    });
   }
 
   clearPendingStripeCheckout();
@@ -2632,7 +2838,10 @@ async function handleStripeCheckoutReturn() {
 }
 
 function onStripePaymentSuccess(_paymentDetails) {
-  alert("payment successful");
+  showAppAlert("Payment successful.", {
+    title: "Payment Complete",
+    variant: "success",
+  });
 }
 
 async function startStripeHostedCheckout(ordersToSubmit, finalTotal) {
@@ -2642,14 +2851,21 @@ async function startStripeHostedCheckout(ordersToSubmit, finalTotal) {
   if (!stripePublishableKey) {
     const configLoaded = await loadStripeConfig();
     if (!configLoaded) {
-      alert(
+      await showAppAlert(
         "Could not load Stripe configuration. Start the backend with 'npm start' and use http://localhost:4242.",
+        {
+          title: "Stripe Configuration Error",
+          variant: "error",
+        },
       );
       return;
     }
   }
   if (!initStripe()) {
-    alert("Unable to load Stripe. Please refresh and try again.");
+    await showAppAlert("Unable to load Stripe. Please refresh and try again.", {
+      title: "Stripe Not Ready",
+      variant: "error",
+    });
     return;
   }
 
@@ -2697,7 +2913,10 @@ async function startStripeHostedCheckout(ordersToSubmit, finalTotal) {
       error && error.message
         ? error.message
         : "Unable to start Stripe checkout.";
-    alert(`Payment failed: ${message}`);
+    await showAppAlert(`Payment failed: ${message}`, {
+      title: "Payment Failed",
+      variant: "error",
+    });
   } finally {
     stripeCheckoutRedirectInProgress = false;
   }
@@ -2742,7 +2961,10 @@ function openStripePaymentModal(ordersToSubmit, finalTotal) {
   if (!modal || !amountText) return;
 
   if (!initStripe()) {
-    alert("Unable to load Stripe. Please refresh and try again.");
+    showAppAlert("Unable to load Stripe. Please refresh and try again.", {
+      title: "Stripe Not Ready",
+      variant: "error",
+    });
     return;
   }
 
@@ -2768,11 +2990,17 @@ function closeStripePaymentModal() {
 
 async function processStripePayment() {
   if (!pendingStripeCheckout) {
-    alert("No payment session found. Please start checkout again.");
+    await showAppAlert("No payment session found. Please start checkout again.", {
+      title: "Session Missing",
+      variant: "warning",
+    });
     return;
   }
   if (!stripe || !stripeCardElement) {
-    alert("Stripe is not ready. Please refresh and try again.");
+    await showAppAlert("Stripe is not ready. Please refresh and try again.", {
+      title: "Stripe Not Ready",
+      variant: "error",
+    });
     return;
   }
   if (stripePaymentInProgress) return;
@@ -2836,7 +3064,10 @@ async function processStripePayment() {
         ? error.message
         : "Payment failed. Please try again.";
     renderStripePaymentErrors(message);
-    alert(`Payment failed: ${message}`);
+    await showAppAlert(`Payment failed: ${message}`, {
+      title: "Payment Failed",
+      variant: "error",
+    });
   } finally {
     stripePaymentInProgress = false;
     if (payBtn) {
@@ -2882,7 +3113,7 @@ function finalizeCheckout(ordersToSubmit, finalTotal) {
   startStripeHostedCheckout(ordersToSubmit, finalTotal);
 }
 
-function confirmCheckoutWithSharedShipping() {
+async function confirmCheckoutWithSharedShipping() {
   const validationResult = validateCheckoutSharedShipping();
   if (!validationResult.isValid) {
     renderCheckoutShippingErrors(validationResult.errors);
@@ -2893,8 +3124,14 @@ function confirmCheckoutWithSharedShipping() {
     (order) => order.orderType === "individual",
   );
   const finalTotal = calculateCartTotal(validationResult.shippingPrice);
-  const confirmed = confirm(
+  const confirmed = await showAppConfirm(
     `You are about to submit ${orderCart.length} order(s).\nShared shipping for ${individualOrders.length} individual order(s): $${validationResult.shippingPrice.toFixed(2)}\nFinal total: $${finalTotal.toFixed(2)}\nDo you want to proceed?`,
+    {
+      title: "Confirm Checkout",
+      confirmText: "Proceed to Payment",
+      cancelText: "Review Cart",
+      variant: "info",
+    },
   );
   if (!confirmed) return;
 
@@ -2917,9 +3154,15 @@ function confirmCheckoutWithSharedShipping() {
 }
 
 // Checkout all orders
-function checkout() {
+async function checkout() {
   if (orderCart.length === 0) {
-    alert("Your cart is empty. Please add at least one order before checkout.");
+    await showAppAlert(
+      "Your cart is empty. Please add at least one order before checkout.",
+      {
+        title: "Cart Is Empty",
+        variant: "warning",
+      },
+    );
     return;
   }
 
@@ -2932,8 +3175,14 @@ function checkout() {
   }
 
   const finalTotal = calculateCartTotal();
-  const confirmed = confirm(
+  const confirmed = await showAppConfirm(
     `You are about to submit ${orderCart.length} order(s).\nFinal total: $${finalTotal.toFixed(2)}\nDo you want to proceed?`,
+    {
+      title: "Confirm Checkout",
+      confirmText: "Proceed to Payment",
+      cancelText: "Review Cart",
+      variant: "info",
+    },
   );
   if (confirmed) {
     finalizeCheckout(orderCart, finalTotal);

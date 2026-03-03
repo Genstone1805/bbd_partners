@@ -876,6 +876,109 @@ body {
   gap: 10px;
   border-top: 1px solid rgba(15, 23, 42, 0.1);
 }
+
+/* App Dialog */
+.appDialog .modal__backdrop {
+  backdrop-filter: blur(5px);
+}
+.appDialog__card {
+  position: relative;
+  width: min(520px, 92vw);
+  margin: 10vh auto 0;
+  padding: 28px 24px 22px;
+  border-radius: 24px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgba(15, 23, 42, 0.07), transparent 45%),
+    linear-gradient(160deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow:
+    0 34px 80px rgba(15, 23, 42, 0.32),
+    0 6px 18px rgba(15, 23, 42, 0.12);
+  animation: appDialogIn 190ms ease-out;
+  overflow: hidden;
+}
+.appDialog__glow {
+  position: absolute;
+  top: -90px;
+  right: -45px;
+  width: 210px;
+  height: 210px;
+  border-radius: 50%;
+  filter: blur(20px);
+  opacity: 0.45;
+  pointer-events: none;
+  background: rgba(47, 95, 191, 0.38);
+}
+.appDialog__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+.appDialog__icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  border: 1px solid rgba(47, 95, 191, 0.28);
+  background: rgba(47, 95, 191, 0.14);
+  color: #1e3a8a;
+  font-size: 28px;
+  font-weight: 900;
+  display: grid;
+  place-items: center;
+}
+.appDialog__title {
+  margin: 14px 0 8px;
+  font-size: 25px;
+  line-height: 1.2;
+  color: #0f172a;
+}
+.appDialog__message {
+  margin: 0;
+  color: rgba(15, 23, 42, 0.82);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+.appDialog__actions {
+  margin-top: 22px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.appDialog[data-variant="success"] .appDialog__icon {
+  border-color: rgba(4, 120, 87, 0.24);
+  background: rgba(16, 185, 129, 0.15);
+  color: #047857;
+}
+.appDialog[data-variant="success"] .appDialog__glow {
+  background: rgba(16, 185, 129, 0.34);
+}
+.appDialog[data-variant="warning"] .appDialog__icon {
+  border-color: rgba(161, 98, 7, 0.3);
+  background: rgba(250, 204, 21, 0.18);
+  color: #92400e;
+}
+.appDialog[data-variant="warning"] .appDialog__glow {
+  background: rgba(251, 191, 36, 0.34);
+}
+.appDialog[data-variant="error"] .appDialog__icon {
+  border-color: rgba(185, 28, 28, 0.28);
+  background: rgba(248, 113, 113, 0.16);
+  color: #b91c1c;
+}
+.appDialog[data-variant="error"] .appDialog__glow {
+  background: rgba(248, 113, 113, 0.36);
+}
+@keyframes appDialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .stripeCardElement {
   width: 100%;
   min-height: 46px;
@@ -1012,6 +1115,9 @@ body {
   }
   .modal__footer {
     flex-direction: column;
+  }
+  .appDialog__actions {
+    flex-direction: column-reverse;
   }
   .drawerActions {
     grid-template-columns: 1fr;

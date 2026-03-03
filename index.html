@@ -793,6 +793,25 @@
         </div>
     </div>
 
+    <!-- App Dialog Modal -->
+    <div class="modal appDialog" id="appDialogModal" role="dialog" aria-modal="true" aria-labelledby="appDialogTitle"
+        aria-describedby="appDialogMessage" style="display: none">
+        <div class="modal__backdrop" data-close="appDialog"></div>
+        <div class="appDialog__card" tabindex="-1">
+            <div class="appDialog__glow"></div>
+            <button class="iconBtn appDialog__close" type="button" data-close="appDialog" aria-label="Close">✕</button>
+
+            <div class="appDialog__icon" id="appDialogIcon" aria-hidden="true">i</div>
+            <h3 class="appDialog__title" id="appDialogTitle">Notice</h3>
+            <p class="appDialog__message" id="appDialogMessage"></p>
+
+            <div class="appDialog__actions">
+                <button class="btn btn--ghost" type="button" id="appDialogCancelBtn">Cancel</button>
+                <button class="btn btn--primary" type="button" id="appDialogConfirmBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
