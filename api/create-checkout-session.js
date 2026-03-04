@@ -1,4 +1,4 @@
-const { stripe } = require("./_lib/stripe");
+const { getStripeClient } = require("./_lib/stripe");
 const {
   withCors,
   handleOptions,
@@ -24,6 +24,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const stripe = getStripeClient();
     const returnBaseUrl = sanitizeReturnBaseUrl(req.body?.returnBaseUrl);
     const baseUrl = inferBaseUrl(req, returnBaseUrl);
     const session = await stripe.checkout.sessions.create({

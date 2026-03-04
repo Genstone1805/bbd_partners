@@ -2851,8 +2851,14 @@ async function startStripeHostedCheckout(ordersToSubmit, finalTotal) {
   if (!stripePublishableKey) {
     const configLoaded = await loadStripeConfig();
     if (!configLoaded) {
+      const isLocalHost =
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+      const configMessage = isLocalHost
+        ? "Could not load Stripe configuration. Start the backend with 'npm start' and use http://localhost:4242."
+        : "Could not load Stripe configuration. In Netlify, set STRIPE_PUBLISHABLE_KEY and STRIPE_SECRET_KEY in Site settings > Environment variables, then redeploy.";
       await showAppAlert(
-        "Could not load Stripe configuration. Start the backend with 'npm start' and use http://localhost:4242.",
+        configMessage,
         {
           title: "Stripe Configuration Error",
           variant: "error",
