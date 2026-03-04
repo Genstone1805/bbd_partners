@@ -2719,11 +2719,11 @@ function savePendingStripeCheckout(ordersToSubmit, finalTotal) {
     ordersToSubmit: JSON.parse(JSON.stringify(ordersToSubmit)),
     finalTotal,
   };
-  localStorage.setItem(PENDING_STRIPE_CHECKOUT_KEY, JSON.stringify(payload));
+  sessionStorage.setItem(PENDING_STRIPE_CHECKOUT_KEY, JSON.stringify(payload));
 }
 
 function readPendingStripeCheckout() {
-  const raw = localStorage.getItem(PENDING_STRIPE_CHECKOUT_KEY);
+  const raw = sessionStorage.getItem(PENDING_STRIPE_CHECKOUT_KEY);
   if (!raw) return null;
 
   try {
@@ -2743,7 +2743,7 @@ function readPendingStripeCheckout() {
 }
 
 function clearPendingStripeCheckout() {
-  localStorage.removeItem(PENDING_STRIPE_CHECKOUT_KEY);
+  sessionStorage.removeItem(PENDING_STRIPE_CHECKOUT_KEY);
 }
 
 function removeStripeParamsFromUrl() {
