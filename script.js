@@ -18,9 +18,29 @@ let orderData = {
   totalGarmentPrice: 0,
   shipping: "",
   shippingPrice: 0,
+  shippingDetails: {
+    unitNumber: "",
+    streetNumber: "",
+    streetAddress1: "",
+    streetAddress2: "",
+    suburb: "",
+    state: "",
+    postcode: "",
+  },
 };
 
 const CART_STORAGE_KEY = "garmentOrderCart";
+const JACKET_GARMENTS = new Set([
+  "premium-unisex-tech-jacket-2xl-5xl",
+  "mens-olympus-softshell-jacket-s-8xl",
+  "ladies-olympus-softshell-jacket-8-26",
+]);
+const POLO_GARMENTS = new Set([
+  "mens-polo-xs-5xl",
+  "mens-polo-5xl-10xl",
+  "womens-polo-20-26",
+  "womens-polo-xs-2xl",
+]);
 
 function loadCartFromSessionStorage() {
   const sessionCart = sessionStorage.getItem(CART_STORAGE_KEY);
@@ -57,7 +77,6 @@ const SHIPPING_PRICES = {
   xl: 25.0,
   freight: 12.0,
 };
-const INDIVIDUAL_SHIPPING_NOTE = "Shipping collected at checkout";
 let checkoutShippingData = {
   shipping: "",
   shippingPrice: 0,
@@ -77,6 +96,137 @@ const API_BASE_URL =
 
 function apiUrl(path) {
   return `${API_BASE_URL}${path}`;
+}
+
+function isJacketGarment(garment) {
+  return JACKET_GARMENTS.has(garment);
+}
+
+function isPoloGarment(garment) {
+  return POLO_GARMENTS.has(garment);
+}
+
+function getShippingFieldIds(prefix = "") {
+  return {
+    unitNumber: `${prefix}shippingUnitNumber`,
+    streetNumber: `${prefix}shippingStreetNumber`,
+    streetAddress1: `${prefix}shippingStreetAddress1`,
+    streetAddress2: `${prefix}shippingStreetAddress2`,
+    suburb: `${prefix}shippingSuburb`,
+    state: `${prefix}shippingState`,
+    postcode: `${prefix}shippingPostcode`,
+  };
+}
+
+function readShippingDetailsFromForm(prefix = "") {
+  const ids = getShippingFieldIds(prefix);
+  return {
+    unitNumber: document.getElementById(ids.unitNumber)?.value.trim() || "",
+    streetNumber: document.getElementById(ids.streetNumber)?.value.trim() || "",
+    streetAddress1:
+      document.getElementById(ids.streetAddress1)?.value.trim() || "",
+    streetAddress2:
+      document.getElementById(ids.streetAddress2)?.value.trim() || "",
+    suburb: document.getElementById(ids.suburb)?.value.trim() || "",
+    state: document.getElementById(ids.state)?.value.trim() || "",
+    postcode: document.getElementById(ids.postcode)?.value.trim() || "",
+  };
+}
+
+function applyShippingDetailsToForm(details, prefix = "") {
+  const ids = getShippingFieldIds(prefix);
+  const normalized = details || {};
+  const unitNumber = document.getElementById(ids.unitNumber);
+  const streetNumber = document.getElementById(ids.streetNumber);
+  const streetAddress1 = document.getElementById(ids.streetAddress1);
+  const streetAddress2 = document.getElementById(ids.streetAddress2);
+  const suburb = document.getElementById(ids.suburb);
+  const state = document.getElementById(ids.state);
+  const postcode = document.getElementById(ids.postcode);
+
+  if (unitNumber) unitNumber.value = normalized.unitNumber || "";
+  if (streetNumber) streetNumber.value = normalized.streetNumber || "";
+  if (streetAddress1) streetAddress1.value = normalized.streetAddress1 || "";
+  if (streetAddress2) streetAddress2.value = normalized.streetAddress2 || "";
+  if (suburb) suburb.value = normalized.suburb || "";
+  if (state) state.value = normalized.state || "";
+  if (postcode) postcode.value = normalized.postcode || "";
+}
+
+function clearShippingDetailsInForm(prefix = "") {
+  applyShippingDetailsToForm(
+    {
+      unitNumber: "",
+      streetNumber: "",
+      streetAddress1: "",
+      streetAddress2: "",
+      suburb: "",
+      state: "",
+      postcode: "",
+    },
+    prefix,
+  );
+}
+
+function formatShippingAddress(details) {
+  if (!details) return "";
+  return [
+    `Unit ${details.unitNumber}`,
+    `${details.streetNumber} ${details.streetAddress1}`,
+    details.streetAddress2,
+    `${details.suburb}, ${details.state} ${details.postcode}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function getDecorationChoicesForGarment(garment) {
+  if (isJacketGarment(garment)) {
+    return [
+      {
+        value: "no-personalisation",
+        label: "No Personalisation (pre-decorated EE logo)",
+      },
+    ];
+  }
+
+  if (isPoloGarment(garment)) {
+    return [
+      {
+        value: "no-personalisation",
+        label: "No Personalisation (pre-decorated EE logo)",
+      },
+      { value: "logo-only", label: "Embroider - Logo only (RHC)" },
+      {
+        value: "logo-name",
+        label: "Embroider - Logo + individual name (LHC)",
+      },
+      { value: "name-only", label: "Embroider - Individual name only (RHC)" },
+      { value: "dept-only", label: "Embroider - Department name only" },
+      {
+        value: "dept-name",
+        label: "Embroider - Individual name & department",
+      },
+    ];
+  }
+
+  return [
+    {
+      value: "no-personalisation",
+      label: "No Personalisation (pre-decorated EE logo)",
+    },
+    { value: "logo-only", label: "Embroider - Logo only (RHC)" },
+    {
+      value: "logo-name",
+      label: "Embroider - Logo + individual name (LHC)",
+    },
+    { value: "name-only", label: "Embroider - Individual name only (RHC)" },
+    { value: "dept-only", label: "Embroider - Department name only" },
+    {
+      value: "dept-name",
+      label: "Embroider - Individual name & department",
+    },
+  ];
 }
 
 let activeAppDialog = null;
@@ -256,8 +406,7 @@ function calculateOrderLineTotals(order) {
       ? order.totalGarmentPrice
       : (order.garmentPrice || 0) * totalQuantity;
   const decorationTotal = (order.decorationPrice || 0) * totalQuantity;
-  const shippingTotal =
-    order.orderType === "department" ? (order.shippingPrice || 0) : 0;
+  const shippingTotal = order.shippingPrice || 0;
 
   return {
     totalQuantity,
@@ -278,9 +427,6 @@ function calculateCartTotal(sharedIndividualShippingPrice = 0) {
 
 function renderCartMetaTotals(sharedIndividualShipping = 0) {
   const subtotal = calculateCartTotal(0);
-  const hasIndividualOrders = orderCart.some(
-    (order) => order.orderType === "individual",
-  );
   const grandTotal = subtotal + sharedIndividualShipping;
 
   const headerCartTotal = document.getElementById("headerCartTotal");
@@ -308,9 +454,7 @@ function renderCartMetaTotals(sharedIndividualShipping = 0) {
 
   const summaryShippingNote = document.getElementById("summaryShippingNote");
   if (summaryShippingNote) {
-    summaryShippingNote.textContent = hasIndividualOrders
-      ? "Shared shipping for individual orders is collected at checkout."
-      : "";
+    summaryShippingNote.textContent = "";
   }
 
   const drawerSub = document.getElementById("drawerSub");
@@ -331,9 +475,7 @@ function renderCartMetaTotals(sharedIndividualShipping = 0) {
   }
   const drawerNote = document.getElementById("drawerNote");
   if (drawerNote) {
-    drawerNote.textContent = hasIndividualOrders
-      ? "Shared shipping for individual orders is applied during checkout."
-      : "";
+    drawerNote.textContent = "";
   }
 }
 
@@ -359,8 +501,7 @@ function renderLiveSummaryPanel() {
       ? orderData.totalGarmentPrice
       : (orderData.garmentPrice || 0) * qty;
   const decoTotal = (orderData.decorationPrice || 0) * qty;
-  const shippingTotal =
-    orderData.orderType === "department" ? orderData.shippingPrice || 0 : 0;
+  const shippingTotal = orderData.shippingPrice || 0;
   const draftTotal = garmentTotal + decoTotal + shippingTotal;
 
   mount.innerHTML = `
@@ -608,16 +749,22 @@ function prevSection(current) {
 function resetPerOrderShippingState() {
   orderData.shipping = "";
   orderData.shippingPrice = 0;
+  orderData.shippingDetails = {
+    unitNumber: "",
+    streetNumber: "",
+    streetAddress1: "",
+    streetAddress2: "",
+    suburb: "",
+    state: "",
+    postcode: "",
+  };
 
   const deliveryNameSelect = document.getElementById("deliveryNameSelect");
   if (deliveryNameSelect) {
     deliveryNameSelect.value = "";
   }
 
-  const shippingAddressInput = document.getElementById("shippingAddress");
-  if (shippingAddressInput) {
-    shippingAddressInput.value = "";
-  }
+  clearShippingDetailsInForm();
 
   document.querySelectorAll('input[name="shipping"]').forEach((input) => {
     input.checked = false;
@@ -638,24 +785,73 @@ function updateSection3ShippingUI() {
   const hasOrderType =
     orderData.orderType === "department" || orderData.orderType === "individual";
 
-  if (!hasOrderType) {
-    if (departmentShippingFields) {
-      departmentShippingFields.style.display = "none";
+  if (departmentShippingFields) {
+    departmentShippingFields.style.display = hasOrderType ? "block" : "none";
+  }
+  if (individualShippingNotice) {
+    individualShippingNotice.style.display = hasOrderType ? "block" : "none";
+  }
+}
+
+function syncDepartmentBulkUI() {
+  const bulkFields = document.getElementById("departmentBulkFields");
+  const quantityField = document.getElementById("quantityField");
+  const addPersonBtn = document.getElementById("addPersonBtn");
+  const isDepartmentOrder = orderData.orderType === "department";
+
+  if (bulkFields) {
+    bulkFields.style.display = isDepartmentOrder ? "block" : "none";
+  }
+
+  if (quantityField) {
+    quantityField.style.display = isDepartmentOrder ? "none" : "block";
+  }
+
+  if (!isDepartmentOrder) {
+    const container = document.getElementById("personalizationItems");
+    if (container) {
+      container.innerHTML = "";
     }
-    if (individualShippingNotice) {
-      individualShippingNotice.style.display = "none";
+    personalizationCount = 0;
+    orderData.personalizationItems = [];
+    if (addPersonBtn) {
+      addPersonBtn.disabled = true;
     }
     return;
   }
 
-  const isDepartmentOrder = orderData.orderType === "department";
+  if (addPersonBtn) {
+    addPersonBtn.disabled = false;
+  }
 
-  if (departmentShippingFields) {
-    departmentShippingFields.style.display = isDepartmentOrder ? "block" : "none";
-  }
-  if (individualShippingNotice) {
-    individualShippingNotice.style.display = isDepartmentOrder ? "none" : "block";
-  }
+  initializePersonalizationSection();
+}
+
+function updateDecorationOptionsForGarment(garment) {
+  const select = document.getElementById("decorationSelect");
+  if (!select) return;
+
+  const options = getDecorationChoicesForGarment(garment);
+  const previousValue = orderData.decoration || select.value;
+
+  select.innerHTML = '<option value="">Select decoration...</option>';
+  options.forEach((item) => {
+    const option = document.createElement("option");
+    option.value = item.value;
+    option.textContent = item.label;
+    select.appendChild(option);
+  });
+
+  const canKeepPrevious = options.some((item) => item.value === previousValue);
+  const selectedValue = canKeepPrevious
+    ? previousValue
+    : isJacketGarment(garment)
+      ? "no-personalisation"
+      : "";
+
+  select.value = selectedValue;
+  selectDecoration(selectedValue);
+  select.disabled = isJacketGarment(garment);
 }
 
 function selectOrderType(type, element) {
@@ -684,9 +880,9 @@ function selectOrderType(type, element) {
     document.getElementById("deptSelectSection1").style.display = "none";
     document.getElementById("departmentSelect").value = "";
     orderData.department = "";
-    resetPerOrderShippingState();
   }
 
+  syncDepartmentBulkUI();
   updateSection3ShippingUI();
   updateFinalTotal();
   clearAddToCartErrors();
@@ -719,11 +915,13 @@ function validateSection1() {
     selectionMade = orderData.depot && orderData.depot !== "";
   }
 
-  document.getElementById("next1").disabled = !(
+  const isValid = !!(
     orderData.orderType &&
     selectionMade &&
     deptSelected
   );
+  document.getElementById("next1").disabled = !isValid;
+  return isValid;
 }
 
 // App wiring
@@ -734,7 +932,9 @@ document.addEventListener("DOMContentLoaded", async function () {
   initStripe();
   await handleStripeCheckoutReturn();
   updateSection3ShippingUI();
+  syncDepartmentBulkUI();
   setActiveSection(1);
+  updateDecorationOptionsForGarment("");
   validateSection1();
   validateSection2();
   updateFinalTotal();
@@ -958,13 +1158,20 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   const deliveryNameSelect = document.getElementById("deliveryNameSelect");
   if (deliveryNameSelect) {
-    deliveryNameSelect.addEventListener("input", clearAddToCartErrors);
+    deliveryNameSelect.addEventListener("input", function () {
+      clearAddToCartErrors();
+      renderLiveSummaryPanel();
+    });
   }
 
-  const shippingAddressInput = document.getElementById("shippingAddress");
-  if (shippingAddressInput) {
-    shippingAddressInput.addEventListener("input", clearAddToCartErrors);
-  }
+  Object.values(getShippingFieldIds()).forEach((fieldId) => {
+    const input = document.getElementById(fieldId);
+    if (!input) return;
+    input.addEventListener("input", function () {
+      clearAddToCartErrors();
+      renderLiveSummaryPanel();
+    });
+  });
 
   const confirmChecked = document.getElementById("confirmChecked");
   if (confirmChecked) {
@@ -978,6 +1185,15 @@ document.addEventListener("DOMContentLoaded", async function () {
       renderLiveSummaryPanel();
     });
   });
+
+  const addPersonBtn = document.getElementById("addPersonBtn");
+  if (addPersonBtn) {
+    addPersonBtn.addEventListener("click", function () {
+      addPersonalizationItem();
+      updateGarmentPriceBasedOnQuantity();
+      renderLiveSummaryPanel();
+    });
+  }
 
   const checkoutDeliverySelect = document.getElementById(
     "checkoutDeliveryNameSelect",
@@ -1114,7 +1330,7 @@ function buildGarmentInfoMap() {
       },
     },
     "mens-polo-5xl-10xl": {
-      name: "Mens Polo JB210",
+      name: "Mens Polo JB210 6XL +",
       sizes: ["6/7XL", "8/9XL", "10/11XL"],
       measurements: {
         halfChest: {
@@ -1262,6 +1478,7 @@ function selectGarment(garment) {
     if (sizeGroup) {
       sizeGroup.style.display = "none";
     }
+    updateDecorationOptionsForGarment("");
     validateSection2();
     updatePriceDisplay();
     return;
@@ -1283,7 +1500,6 @@ function selectGarment(garment) {
 
   // Show size selection section and populate measurement + size options
   if (selectedGarmentInfo.sizes && selectedGarmentInfo.sizes.length > 0) {
-    populateSizeMetricOptions(selectedGarmentInfo);
     populateSizeOptions(selectedGarmentInfo, "");
     if (sizeGroup) {
       sizeGroup.style.display = "block";
@@ -1296,6 +1512,8 @@ function selectGarment(garment) {
 
   // Populate price tier options for the selected garment (only if prices exist)
   populatePriceTierOptions(selectedGarmentInfo);
+  updateDecorationOptionsForGarment(garment);
+  syncDepartmentBulkUI();
 
   // Update single-price display if applicable
   updatePriceDisplay();
@@ -1457,6 +1675,7 @@ function selectDecoration(decoration) {
   orderData.decoration = decoration;
 
   const prices = {
+    "no-personalisation": 0,
     "name-only": 8.0,
     "logo-name": 12.0,
     "logo-only": 9.5,
@@ -1464,7 +1683,7 @@ function selectDecoration(decoration) {
     "dept-name": 9.5,
   };
 
-  orderData.decorationPrice = prices[decoration];
+  orderData.decorationPrice = prices[decoration] || 0;
 
   // Show/hide fields based on decoration type
   const logoSelectionGroup = document.getElementById("logoSelectionGroup");
@@ -1472,31 +1691,31 @@ function selectDecoration(decoration) {
   const deptSelectionGroup = document.getElementById("deptSelectionGroup");
 
   // Reset all fields
-  logoSelectionGroup.style.display = "none";
-  nameInputGroup.style.display = "none";
-  deptSelectionGroup.style.display = "none";
+  if (logoSelectionGroup) logoSelectionGroup.style.display = "none";
+  if (nameInputGroup) nameInputGroup.style.display = "none";
+  if (deptSelectionGroup) deptSelectionGroup.style.display = "none";
 
   // Logo only: show logo dropdown
   if (decoration === "logo-only") {
-    logoSelectionGroup.style.display = "block";
+    if (logoSelectionGroup) logoSelectionGroup.style.display = "block";
   }
   // Logo + Name: show logo dropdown + name input
   else if (decoration === "logo-name") {
-    logoSelectionGroup.style.display = "block";
-    nameInputGroup.style.display = "block";
+    if (logoSelectionGroup) logoSelectionGroup.style.display = "block";
+    if (nameInputGroup) nameInputGroup.style.display = "block";
   }
   // Name only: show name input only
   else if (decoration === "name-only") {
-    nameInputGroup.style.display = "block";
+    if (nameInputGroup) nameInputGroup.style.display = "block";
   }
   // Department only: show department dropdown
   else if (decoration === "dept-only") {
-    deptSelectionGroup.style.display = "block";
+    if (deptSelectionGroup) deptSelectionGroup.style.display = "block";
   }
   // Department + Name: show department dropdown + name input
   else if (decoration === "dept-name") {
-    deptSelectionGroup.style.display = "block";
-    nameInputGroup.style.display = "block";
+    if (deptSelectionGroup) deptSelectionGroup.style.display = "block";
+    if (nameInputGroup) nameInputGroup.style.display = "block";
   }
 
   // Clear values when switching decoration types
@@ -1553,7 +1772,9 @@ function validateSection2() {
   const decoration = orderData.decoration;
   let isValid = false;
 
-  if (decoration === "logo-only") {
+  if (decoration === "no-personalisation") {
+    isValid = true;
+  } else if (decoration === "logo-only") {
     isValid = orderData.logo && orderData.logo !== "";
   } else if (decoration === "logo-name") {
     isValid =
@@ -1587,6 +1808,9 @@ function validateSection2() {
 
 // Section 4: Personalization Items
 function initializePersonalizationSection() {
+  if (orderData.orderType !== "department") {
+    return;
+  }
   if (personalizationCount === 0) {
     addPersonalizationItem();
   }
@@ -1595,96 +1819,18 @@ function initializePersonalizationSection() {
 function addPersonalizationItem() {
   personalizationCount++;
   const container = document.getElementById("personalizationItems");
-
-  // Determine what fields to show based on decoration type
-  const decoration = orderData.decoration;
-  const needsDept = decoration === "dept-only" || decoration === "dept-name";
-
-  // Build department field (only for dept-only and dept-name decorations)
-  let deptHTML = "";
-  if (needsDept) {
-    deptHTML += `<div class="form-group">
-        <label class="form-label required">Department Name <span style="font-weight:400;">(if you are unsure please ask your supervisor)</span></label>
-        <select class="select-input" data-field="department" data-person="${personalizationCount}">
-          <option value="">Select department...</option>
-          <option value="Asset and Operational Excellence">Asset and Operational Excellence</option>
-          <option value="Asset Engineering">Asset Engineering</option>
-          <option value="Assets & Operations Management">Assets & Operations Management</option>
-          <option value="Coastal Operations">Coastal Operations</option>
-          <option value="Commercial Design">Commercial Design</option>
-          <option value="Commercial Services">Commercial Services</option>
-          <option value="Contestable Network Solutions">Contestable Network Solutions</option>
-          <option value="Contract Management Capability Program">Contract Management Capability Program</option>
-          <option value="Customer & Commerical">Customer & Commerical</option>
-          <option value="Design Services">Design Services</option>
-          <option value="Devops">Devops</option>
-          <option value="Digital Asset Management">Digital Asset Management</option>
-          <option value="Digital Delivery">Digital Delivery</option>
-          <option value="Digital Services">Digital Services</option>
-          <option value="Electric Vehicle Transition">Electric Vehicle Transition</option>
-          <option value="Electrical Safety Office">Electrical Safety Office</option>
-          <option value="Finance Division">Finance Division</option>
-          <option value="Fleet Team">Fleet Team</option>
-          <option value="Frontline Mobility">Frontline Mobility</option>
-          <option value="Future Networks">Future Networks</option>
-          <option value="Governance & Corporate Services">Governance & Corporate Services</option>
-          <option value="Graduate Program">Graduate Program</option>
-          <option value="Innovation Team">Innovation Team</option>
-          <option value="Inventory & Logistics">Inventory & Logistics</option>
-          <option value="Learning & Capability">Learning & Capability</option>
-          <option value="Location + Midnorth Coast Operations">Location + Midnorth Coast Operations</option>
-          <option value="Major Projects and Transmission">Major Projects and Transmission</option>
-          <option value="Major Projects and Transmission Services">Major Projects and Transmission Services</option>
-          <option value="Meter 2 Cash">Meter 2 Cash</option>
-          <option value="Midnorth Coast Operations">Midnorth Coast Operations</option>
-          <option value="MSM Team">MSM Team</option>
-          <option value="Murray Operations">Murray Operations</option>
-          <option value="Network Design">Network Design</option>
-          <option value="Network Development">Network Development</option>
-          <option value="Network Investment and Maintenance">Network Investment and Maintenance</option>
-          <option value="Network Planning">Network Planning</option>
-          <option value="Network Planning and Development">Network Planning and Development</option>
-          <option value="Network Services">Network Services</option>
-          <option value="Network Substation and Design">Network Substation and Design</option>
-          <option value="North West Operations">North West Operations</option>
-          <option value="Operational Services">Operational Services</option>
-          <option value="Operations">Operations</option>
-          <option value="Outage Management Group">Outage Management Group</option>
-          <option value="People & Safety">People & Safety</option>
-          <option value="People Operations and Planning">People Operations and Planning</option>
-          <option value="Portfolio Services">Portfolio Services</option>
-          <option value="Procurement">Procurement</option>
-          <option value="Property">Property</option>
-          <option value="Riverina Slopes">Riverina Slopes</option>
-          <option value="South Eastern Operations">South Eastern Operations</option>
-          <option value="Strategy and Future Networks">Strategy and Future Networks</option>
-          <option value="Telbu">Telbu</option>
-          <option value="Transmission Services">Transmission Services</option>
-          <option value="Vegatation Operations">Vegatation Operations</option>
-          <option value="Works Delivery & Specilised Services">Works Delivery & Specilised Services</option>
-          <option value="Zone Substation Engineering">Zone Substation Engineering</option>
-          <option value="other">Other (please note - you will need prior approval if your department is not listed)</option>
-        </select>
-      </div>`;
-  }
-
-  // Name field is always shown for all decoration types
-  const nameHTML = `<div class="form-group">
-        <label class="form-label required">Individual Person's Name</label>
-        <input type="text" class="text-input" placeholder="Enter name" data-field="name" data-person="${personalizationCount}">
-      </div>`;
+  if (!container) return;
 
   const itemHTML = `
     <div class="personalization-item" id="person-${personalizationCount}">
-      <div class="personalization-header">
-        <span class="item-number">Person #${personalizationCount}</span>
-        ${personalizationCount > 1 ? `<button class="remove-btn" onclick="removePersonalizationItem(${personalizationCount})">Remove</button>` : ""}
-      </div>
-      ${deptHTML}
-      ${nameHTML}
-      <div class="form-group">
-        <label class="form-label required">Quantity</label>
-        <input type="number" class="number-input" min="1" value="1" data-field="quantity" data-person="${personalizationCount}" oninput="updateGarmentPriceBasedOnQuantity()">
+      <div class="bulkRow">
+        <input type="text" class="input" placeholder="Person / recipient name (optional)" data-field="name" data-person="${personalizationCount}">
+        <input type="number" class="input" min="1" value="1" data-field="quantity" data-person="${personalizationCount}" oninput="updateGarmentPriceBasedOnQuantity()">
+        ${
+          personalizationCount > 1
+            ? `<button class="miniBtn miniBtn--danger" type="button" onclick="removePersonalizationItem(${personalizationCount})">Remove</button>`
+            : `<span></span>`
+        }
       </div>
     </div>
   `;
@@ -1693,10 +1839,21 @@ function addPersonalizationItem() {
 }
 
 function removePersonalizationItem(id) {
-  document.getElementById(`person-${id}`).remove();
+  const row = document.getElementById(`person-${id}`);
+  if (row) {
+    row.remove();
+  }
   orderData.personalizationItems = orderData.personalizationItems.filter(
     (item) => item.id !== id,
   );
+  if (
+    orderData.orderType === "department" &&
+    document.querySelectorAll(".personalization-item").length === 0
+  ) {
+    addPersonalizationItem();
+  }
+  updateGarmentPriceBasedOnQuantity();
+  renderLiveSummaryPanel();
 }
 
 function collectPersonalizationData() {
@@ -1790,6 +1947,7 @@ function updateGarmentPriceBasedOnQuantity() {
 
   // Ensure the price input (if visible) reflects the latest computed price
   updatePriceDisplay();
+  renderLiveSummaryPanel();
 }
 
 // Helper function to update garment price with a specific tier
@@ -1811,7 +1969,7 @@ function updateGarmentPriceWithTier(priceTier) {
         name: "Mens Polo 1065",
       },
       "mens-polo-5xl-10xl": {
-        name: "Mens Polo JB210",
+        name: "Mens Polo JB210 6XL +",
       },
       "womens-polo-xs-2xl": {
         name: "Ladies Polo JH201W",
@@ -2011,8 +2169,7 @@ function generateOrderSummary() {
       ? orderData.totalGarmentPrice
       : (orderData.garmentPrice || 0) * totalQuantity;
   const decorationTotal = (orderData.decorationPrice || 0) * totalQuantity;
-  const shippingTotal =
-    orderData.orderType === "department" ? orderData.shippingPrice || 0 : 0;
+  const shippingTotal = orderData.shippingPrice || 0;
   const grandTotal = garmentTotal + decorationTotal + shippingTotal;
 
   const rows = [
@@ -2025,11 +2182,7 @@ function generateOrderSummary() {
     ["Decoration cost", `$${decorationTotal.toFixed(2)}`],
   ];
 
-  if (orderData.orderType === "department") {
-    rows.push(["Shipping", `$${shippingTotal.toFixed(2)}`]);
-  } else {
-    rows.push(["Shipping", "Collected at checkout"]);
-  }
+  rows.push(["Shipping", `$${shippingTotal.toFixed(2)}`]);
 
   if (orderData.decorationName) {
     rows.push(["Name", orderData.decorationName]);
@@ -2093,7 +2246,7 @@ function editPersonalization(id) {
 function getGarmentName(garment) {
   const names = {
     "mens-polo-xs-5xl": "Mens Polo 1065 (XS - 5XL)",
-    "mens-polo-5xl-10xl": "Mens Polo JB210 (6XL - 10XL)",
+    "mens-polo-5xl-10xl": "Mens Polo JB210 6XL +",
     "womens-polo-xs-2xl": "Ladies Polo JH201W (XS-2XL)",
     "womens-polo-20-26": "Ladies Polo 1165 (20 - 26)",
     "premium-unisex-tech-jacket-2xl-5xl":
@@ -2108,6 +2261,7 @@ function getGarmentName(garment) {
 
 function getDecorationName(decoration) {
   const names = {
+    "no-personalisation": "No Personalisation (pre-decorated EE logo)",
     "name-only": "Individual name only (RHC)",
     "logo-name": "Logo & individual name (RHC)",
     "logo-only": "Logo only (RHC)",
@@ -2254,8 +2408,7 @@ function updateFinalTotal() {
       ? orderData.totalGarmentPrice
       : orderData.garmentPrice * totalQuantity;
   const decorationTotal = orderData.decorationPrice * totalQuantity;
-  const shippingTotal =
-    orderData.orderType === "department" ? orderData.shippingPrice : 0;
+  const shippingTotal = orderData.shippingPrice || 0;
   const finalTotal = garmentTotal + decorationTotal + shippingTotal;
 
   document.getElementById("finalTotal").textContent =
@@ -2330,7 +2483,6 @@ function renderCheckoutShippingErrors(errors) {
 
 function validateAddToCart() {
   const errors = [];
-  const isDepartmentOrder = orderData.orderType === "department";
   const requiresNameApproval =
     orderData.decoration === "logo-name" ||
     orderData.decoration === "name-only" ||
@@ -2338,22 +2490,37 @@ function validateAddToCart() {
   const confirmed =
     document.getElementById("confirmChecked") &&
     document.getElementById("confirmChecked").checked;
+  const deliveryName = document.getElementById("deliveryNameSelect").value.trim();
+  const shippingDetails = readShippingDetailsFromForm();
 
-  if (isDepartmentOrder) {
-    const deliveryName = document.getElementById("deliveryNameSelect").value.trim();
-    const address = document.getElementById("shippingAddress").value.trim();
+  if (!deliveryName) {
+    errors.push("Please enter a name on delivery.");
+  }
 
-    if (!deliveryName) {
-      errors.push("Please enter a name on delivery.");
-    }
+  if (!shippingDetails.unitNumber) {
+    errors.push("Please enter a unit number.");
+  }
+  if (!shippingDetails.streetNumber) {
+    errors.push("Please enter a street number.");
+  }
+  if (!shippingDetails.streetAddress1) {
+    errors.push("Please enter street address line 1.");
+  }
+  if (!shippingDetails.streetAddress2) {
+    errors.push("Please enter street address line 2.");
+  }
+  if (!shippingDetails.suburb) {
+    errors.push("Please enter a suburb.");
+  }
+  if (!shippingDetails.state) {
+    errors.push("Please enter a state.");
+  }
+  if (!shippingDetails.postcode) {
+    errors.push("Please enter a postcode.");
+  }
 
-    if (!address) {
-      errors.push("Please enter a shipping address.");
-    }
-
-    if (!orderData.shipping) {
-      errors.push("Please select a shipping option.");
-    }
+  if (!orderData.shipping) {
+    errors.push("Please select a shipping option.");
   }
 
   if (requiresNameApproval && !orderData.nameApprovalChecked) {
@@ -2369,6 +2536,8 @@ function validateAddToCart() {
   return {
     isValid: errors.length === 0,
     errors,
+    shippingDetails,
+    deliveryName,
   };
 }
 
@@ -2382,22 +2551,18 @@ function addToCart() {
     return;
   }
 
-  const isDepartmentOrder = orderData.orderType === "department";
-  const deliveryName = isDepartmentOrder
-    ? document.getElementById("deliveryNameSelect").value.trim()
-    : INDIVIDUAL_SHIPPING_NOTE;
-  const address = isDepartmentOrder
-    ? document.getElementById("shippingAddress").value.trim()
-    : "";
-  const shippingType = isDepartmentOrder ? orderData.shipping : "";
-  const shippingPrice = isDepartmentOrder ? orderData.shippingPrice : 0;
+  const deliveryName = validationResult.deliveryName;
+  const shippingDetails = validationResult.shippingDetails;
+  const shippingAddress = formatShippingAddress(shippingDetails);
+  orderData.shippingDetails = shippingDetails;
 
   // Save current order to cart
   const orderCopy = JSON.parse(JSON.stringify(orderData));
   orderCopy.deliveryName = deliveryName;
-  orderCopy.shippingAddress = address;
-  orderCopy.shipping = shippingType;
-  orderCopy.shippingPrice = shippingPrice;
+  orderCopy.shippingDetails = shippingDetails;
+  orderCopy.shippingAddress = shippingAddress;
+  orderCopy.shipping = orderData.shipping;
+  orderCopy.shippingPrice = orderData.shippingPrice;
   orderCopy.orderNumber = orderCart.length + 1;
   orderCopy.id = Date.now(); // Unique ID for editing
   orderCart.push(orderCopy);
@@ -2412,9 +2577,7 @@ function addToCart() {
     drawer.style.display = "none";
   }
   showSuccessToast(
-    isDepartmentOrder
-      ? "Department order added to cart. You can add another order now."
-      : "Individual order added to cart. Shipping will be entered at checkout.",
+    "Order added to cart. You can add another order now.",
   );
 }
 
@@ -2496,8 +2659,16 @@ function editOrderFromCart(index) {
         ? order.totalGarmentPrice
         : 0,
     shipping: order.shipping || "",
-    shippingPrice:
-      order.orderType === "department" ? (order.shippingPrice || 0) : 0,
+    shippingPrice: order.shippingPrice || 0,
+    shippingDetails: order.shippingDetails || {
+      unitNumber: "",
+      streetNumber: "",
+      streetAddress1: "",
+      streetAddress2: "",
+      suburb: "",
+      state: "",
+      postcode: "",
+    },
   };
 
   // Populate form fields
@@ -2514,27 +2685,57 @@ function editOrderFromCart(index) {
   if (order.orderType === "department") {
     document.getElementById("deptSelectSection1").style.display = "block";
     document.getElementById("departmentSelect").value = order.department;
-
-    document.getElementById("deliveryNameSelect").value = order.deliveryName || "";
-    document.getElementById("shippingAddress").value = order.shippingAddress || "";
-    if (order.shipping) {
-      selectShipping(order.shipping);
-    } else {
-      resetPerOrderShippingState();
-    }
   } else {
     document.getElementById("deptSelectSection1").style.display = "none";
-    resetPerOrderShippingState();
+  }
+  document.getElementById("deliveryNameSelect").value = order.deliveryName || "";
+  applyShippingDetailsToForm(order.shippingDetails || null);
+  if (order.shipping) {
+    selectShipping(order.shipping);
   }
   updateSection3ShippingUI();
+  syncDepartmentBulkUI();
 
   // Set garment
   document.getElementById("garmentSelect").value = order.garment;
   selectGarment(order.garment);
 
+  if (
+    order.orderType === "department" &&
+    Array.isArray(order.personalizationItems) &&
+    order.personalizationItems.length > 0
+  ) {
+    const container = document.getElementById("personalizationItems");
+    if (container) {
+      container.innerHTML = "";
+      personalizationCount = 0;
+      order.personalizationItems.forEach((item) => {
+        addPersonalizationItem();
+        const row = document.getElementById(`person-${personalizationCount}`);
+        if (!row) return;
+        const nameInput = row.querySelector('[data-field="name"]');
+        const qtyInput = row.querySelector('[data-field="quantity"]');
+        if (nameInput) {
+          nameInput.value = item.name || "";
+        }
+        if (qtyInput) {
+          qtyInput.value = Math.max(parseInt(item.quantity, 10) || 1, 1);
+        }
+      });
+    }
+  }
+
   // Set decoration
-  document.getElementById("decorationSelect").value = order.decoration;
-  selectDecoration(order.decoration);
+  const decorationSelect = document.getElementById("decorationSelect");
+  if (
+    decorationSelect &&
+    Array.from(decorationSelect.options).some(
+      (option) => option.value === order.decoration,
+    )
+  ) {
+    decorationSelect.value = order.decoration;
+    selectDecoration(order.decoration);
+  }
   const nameApprovalCheckbox = document.getElementById("nameApprovalChecked");
   if (nameApprovalCheckbox) {
     nameApprovalCheckbox.checked = Boolean(order.nameApprovalChecked);
@@ -2581,6 +2782,8 @@ function editOrderFromCart(index) {
     orderData.selectedQuantity = order.selectedQuantity;
   }
 
+  updateGarmentPriceBasedOnQuantity();
+
   // Go to section 2 (Garment & Decoration)
   setActiveSection(2);
 
@@ -2606,7 +2809,7 @@ function openCheckoutShippingModal() {
       departmentOrderCount > 0
         ? `${individualOrderCount} individual and ${departmentOrderCount} department order(s)`
         : `${individualOrderCount} individual order(s)`;
-    summary.textContent = `Cart has ${orderSummary}. Current total before shared individual shipping: $${calculateCartTotal().toFixed(2)}.`;
+    summary.textContent = `Cart has ${orderSummary}. Current total: $${calculateCartTotal().toFixed(2)}.`;
   }
 
   checkoutShippingData = {
@@ -3131,7 +3334,7 @@ async function confirmCheckoutWithSharedShipping() {
   );
   const finalTotal = calculateCartTotal(validationResult.shippingPrice);
   const confirmed = await showAppConfirm(
-    `You are about to submit ${orderCart.length} order(s).\nShared shipping for ${individualOrders.length} individual order(s): $${validationResult.shippingPrice.toFixed(2)}\nFinal total: $${finalTotal.toFixed(2)}\nDo you want to proceed?`,
+    `You are about to submit ${orderCart.length} order(s).\nCheckout shipping adjustment for ${individualOrders.length} individual order(s): $${validationResult.shippingPrice.toFixed(2)}\nFinal total: $${finalTotal.toFixed(2)}\nDo you want to proceed?`,
     {
       title: "Confirm Checkout",
       confirmText: "Proceed to Payment",
@@ -3159,6 +3362,29 @@ async function confirmCheckoutWithSharedShipping() {
   finalizeCheckout(ordersToSubmit, finalTotal);
 }
 
+function validateCartOrdersHaveShipping() {
+  const missing = [];
+  orderCart.forEach((order) => {
+    const details = order.shippingDetails || {};
+    const hasAllDetails =
+      !!order.deliveryName &&
+      !!order.shipping &&
+      !!details.unitNumber &&
+      !!details.streetNumber &&
+      !!details.streetAddress1 &&
+      !!details.streetAddress2 &&
+      !!details.suburb &&
+      !!details.state &&
+      !!details.postcode;
+
+    if (!hasAllDetails) {
+      missing.push(order.orderNumber || order.id || "?");
+    }
+  });
+
+  return missing;
+}
+
 // Checkout all orders
 async function checkout() {
   if (orderCart.length === 0) {
@@ -3172,11 +3398,15 @@ async function checkout() {
     return;
   }
 
-  const hasIndividualOrders = orderCart.some(
-    (order) => order.orderType === "individual",
-  );
-  if (hasIndividualOrders) {
-    openCheckoutShippingModal();
+  const ordersMissingShipping = validateCartOrdersHaveShipping();
+  if (ordersMissingShipping.length > 0) {
+    await showAppAlert(
+      `Shipping details are incomplete for order(s): ${ordersMissingShipping.join(", ")}. Please edit each order and complete shipping before checkout.`,
+      {
+        title: "Shipping Required",
+        variant: "warning",
+      },
+    );
     return;
   }
 
@@ -3217,6 +3447,15 @@ function resetForm() {
     totalGarmentPrice: 0,
     shipping: "",
     shippingPrice: 0,
+    shippingDetails: {
+      unitNumber: "",
+      streetNumber: "",
+      streetAddress1: "",
+      streetAddress2: "",
+      suburb: "",
+      state: "",
+      postcode: "",
+    },
   };
 
   // Reset section 1
@@ -3233,14 +3472,17 @@ function resetForm() {
   // Reset section 2
   document.getElementById("garmentSelect").value = "";
   document.getElementById("sizeSelectionGroup").style.display = "none";
-  document.getElementById("sizeMetricSelect").innerHTML =
-    '<option value="">Select measurement...</option>';
+  const sizeMetricSelect = document.getElementById("sizeMetricSelect");
+  if (sizeMetricSelect) {
+    sizeMetricSelect.innerHTML = '<option value="">Select measurement...</option>';
+  }
   document.getElementById("sizeSelect").innerHTML =
     '<option value="">Select size...</option>';
   document.getElementById("quantityInput").value = "1";
   document.getElementById("priceSelectionGroup").style.display = "none";
   document.getElementById("priceDisplayGroup").style.display = "none";
   document.getElementById("decorationSelect").value = "";
+  updateDecorationOptionsForGarment("");
   document.getElementById("logoSelectionGroup").style.display = "none";
   document.getElementById("logoSelect").value = "";
   document.getElementById("nameInputGroup").style.display = "none";
@@ -3248,6 +3490,16 @@ function resetForm() {
   document.getElementById("nameApprovalChecked").checked = false;
   document.getElementById("deptSelectionGroup").style.display = "none";
   document.getElementById("decorationDeptSelect").value = "";
+  document.getElementById("decorationSelect").disabled = false;
+  const quantityField = document.getElementById("quantityField");
+  if (quantityField) {
+    quantityField.style.display = "block";
+  }
+  const personalizationContainer = document.getElementById("personalizationItems");
+  if (personalizationContainer) {
+    personalizationContainer.innerHTML = "";
+  }
+  personalizationCount = 0;
 
   // Reset section 3
   resetPerOrderShippingState();
@@ -3261,6 +3513,7 @@ function resetForm() {
   document.getElementById("next1").disabled = true;
   document.getElementById("next2").disabled = true;
   updateSection3ShippingUI();
+  syncDepartmentBulkUI();
   updateFinalTotal();
   renderLiveSummaryPanel();
 

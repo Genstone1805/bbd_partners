@@ -112,7 +112,7 @@
                                             <input type="radio" name="orderType" value="individual" />
                                             <div class="choiceCard__body">
                                                 <div class="choiceCard__title">Individual Person</div>
-                                                <div class="choiceCard__desc">Shipping collected once at checkout.</div>
+                                                <div class="choiceCard__desc">Shipping captured per order in Review.</div>
                                             </div>
                                         </label>
 
@@ -318,7 +318,7 @@
                         <section class="panel section" id="section2" aria-labelledby="s2-title">
                             <div class="panel__header">
                                 <h2 class="panel__title" id="s2-title">Garment & decoration</h2>
-                                <p class="panel__subtitle">Select garment, size, quantity, and embroidery options.</p>
+                                <p class="panel__subtitle">Select garment, size, quantity, and decoration options.</p>
                             </div>
 
                             <div class="fields">
@@ -327,7 +327,7 @@
                                     <select class="select" id="garmentSelect">
                                         <option value="">Select garment...</option>
                                         <option value="mens-polo-xs-5xl">Mens Polo 1065</option>
-                                        <option value="mens-polo-5xl-10xl">Mens Polo JB210</option>
+                                        <option value="mens-polo-5xl-10xl">Mens Polo JB210 6XL +</option>
                                         <option value="womens-polo-20-26">Ladies Polo 1165</option>
                                         <option value="premium-unisex-tech-jacket-2xl-5xl">Podium Unisex Tech Jacket
                                         </option>
@@ -339,24 +339,14 @@
                                 </div>
 
                                 <div class="field" id="sizeSelectionGroup" style="display: none">
-                                    <div class="grid2">
-                                        <div>
-                                            <label class="label">Measurement type <span
-                                                    class="muted">(optional)</span></label>
-                                            <select class="select" id="sizeMetricSelect">
-                                                <option value="">Select measurement...</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label class="label required">Size</label>
-                                            <select class="select" id="sizeSelect">
-                                                <option value="">Select size...</option>
-                                            </select>
-                                        </div>
+                                    <div>
+                                        <label class="label required">Size</label>
+                                        <select class="select" id="sizeSelect">
+                                            <option value="">Select size...</option>
+                                        </select>
                                     </div>
 
-                                    <div class="field" style="margin-top: 12px">
+                                    <div class="field" id="quantityField" style="margin-top: 12px">
                                         <label class="label required">Quantity</label>
                                         <input class="input" id="quantityInput" type="number" min="1" value="1" />
                                         <div class="hint">For tier pricing, quantity can be split across “people” later.
@@ -381,6 +371,7 @@
                                     <label class="label required">Decoration option</label>
                                     <select class="select" id="decorationSelect">
                                         <option value="">Select decoration...</option>
+                                        <option value="no-personalisation">No Personalisation (pre-decorated EE logo)</option>
                                         <option value="logo-only">Embroider - Logo only (RHC)</option>
                                         <option value="logo-name">Embroider - Logo + individual name (LHC)</option>
                                         <option value="name-only">Embroider - Individual name only (RHC)</option>
@@ -393,11 +384,11 @@
                                     <label class="label required">Select logo</label>
                                     <select class="select" id="logoSelect">
                                         <option value="">Select logo...</option>
-                                        <option value="Essential Energy logo">Essential Energy logo</option>
+                                        <option value="Essential Energy Training Academy">Essential Energy Training Academy</option>
                                         <option value="Metre 2 Cash logo">Metre 2 Cash logo</option>
                                     </select>
                                     <div class="hint">
-                                        If your logo is not listed, contact your cost centre.
+                                        All garments are pre-decorated with the normal EE logo if this option is not selected.
                                     </div>
                                 </div>
 
@@ -410,7 +401,7 @@
                                         <input type="checkbox" id="nameApprovalChecked" />
                                         <span>
                                             All individualisations have been approved by the relevant cost centre.
-                                            BlackDog Ink takes no responsibility for un-approved customisations
+                                            BlackDog Ink takes no responsibility for unapproved customisations
                                             (nicknames, abbreviations, etc).
                                         </span>
                                     </label>
@@ -493,6 +484,18 @@
                                         <option value="other">Other (approval required)</option>
                                     </select>
                                 </div>
+
+                                <div class="field" id="departmentBulkFields" style="display: none">
+                                    <label class="label">Department order line items</label>
+                                    <div id="personalizationItems" class="bulkRows"></div>
+                                    <div style="margin-top: 10px; display: flex; justify-content: flex-start;">
+                                        <button class="btn btn--ghost" type="button" id="addPersonBtn" style="width: auto;">Add more +</button>
+                                    </div>
+                                    <div class="hint">
+                                        If you are processing a bulk department order with multiple shipping allocations,
+                                        process separate addressees as <strong>individual orders</strong> so they can be shipped separately.
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="actions">
@@ -515,14 +518,14 @@
                                         <input type="checkbox" id="confirmChecked" />
                                         <span>
                                             I confirm I have checked all personalisation details (spelling etc).
-                                            BlackDog is not responsible for mistakes made on this order form.
+                                            BlackDog Ink is not liable errors made on this order form.
                                         </span>
                                     </label>
 
-                                    <div id="individualShippingNotice" class="infoBox" style="display: none">
-                                        <strong>Individual order:</strong> Shipping will be collected once at checkout
-                                        and applied to
-                                        all individual orders in your cart.
+                                    <div id="individualShippingNotice" class="infoBox">
+                                        <strong>Shipping note:</strong> Enter shipping for this order here.
+                                        For bulk orders that need multiple delivery addresses, create separate
+                                        <strong>individual orders</strong> for each address.
                                     </div>
 
                                     <div id="departmentShippingFields">
@@ -532,10 +535,47 @@
                                                 placeholder="Enter name on delivery" />
                                         </div>
 
+                                        <div class="grid2">
+                                            <div class="field">
+                                                <label class="label required">Unit Number</label>
+                                                <input class="input" id="shippingUnitNumber" type="text"
+                                                    placeholder="Enter unit number" />
+                                            </div>
+                                            <div class="field">
+                                                <label class="label required">Street Number</label>
+                                                <input class="input" id="shippingStreetNumber" type="text"
+                                                    placeholder="Enter street number" />
+                                            </div>
+                                        </div>
+
                                         <div class="field">
-                                            <label class="label required">Shipping address</label>
-                                            <input class="input" id="shippingAddress" type="text"
-                                                placeholder="Enter depot address for delivery" />
+                                            <label class="label required">Street Address Line 1</label>
+                                            <input class="input" id="shippingStreetAddress1" type="text"
+                                                placeholder="Enter street address line 1" />
+                                        </div>
+
+                                        <div class="field">
+                                            <label class="label required">Street Address Line 2</label>
+                                            <input class="input" id="shippingStreetAddress2" type="text"
+                                                placeholder="Enter street address line 2" />
+                                        </div>
+
+                                        <div class="grid3">
+                                            <div class="field">
+                                                <label class="label required">Suburb</label>
+                                                <input class="input" id="shippingSuburb" type="text"
+                                                    placeholder="Enter suburb" />
+                                            </div>
+                                            <div class="field">
+                                                <label class="label required">State</label>
+                                                <input class="input" id="shippingState" type="text"
+                                                    placeholder="Enter state" />
+                                            </div>
+                                            <div class="field">
+                                                <label class="label required">Postcode</label>
+                                                <input class="input" id="shippingPostcode" type="text"
+                                                    placeholder="Enter postcode" />
+                                            </div>
                                         </div>
 
                                         <div class="field">
@@ -617,7 +657,7 @@
                                     <span class="money" id="summaryCartSubtotal">$0.00</span>
                                 </div>
                                 <div class="summaryTotals__row">
-                                    <span>Shared individual shipping</span>
+                                    <span>Extra checkout shipping</span>
                                     <span class="money" id="summarySharedShip">$0.00</span>
                                 </div>
                                 <div class="summaryTotals__row summaryTotals__row--strong">
@@ -683,7 +723,7 @@
                         <span class="money" id="drawerSubtotal">$0.00</span>
                     </div>
                     <div class="drawerTotals__row">
-                        <span>Shared individual shipping</span>
+                        <span>Extra checkout shipping</span>
                         <span class="money" id="drawerSharedShip">$0.00</span>
                     </div>
                     <div class="drawerTotals__row drawerTotals__row--strong">

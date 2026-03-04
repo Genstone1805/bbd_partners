@@ -371,6 +371,24 @@ body {
   gap: 12px;
 }
 
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.bulkRows {
+  display: grid;
+  gap: 10px;
+}
+
+.bulkRow {
+  display: grid;
+  grid-template-columns: 1fr 180px auto;
+  gap: 10px;
+  align-items: center;
+}
+
 /* Choice cards */
 .choiceGrid {
   display: grid;
@@ -1090,6 +1108,12 @@ body {
     grid-template-columns: 1fr;
   }
   .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .grid3 {
+    grid-template-columns: 1fr;
+  }
+  .bulkRow {
     grid-template-columns: 1fr;
   }
   .shipOption {
