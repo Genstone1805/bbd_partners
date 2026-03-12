@@ -19,3 +19,9 @@ from = "/api/checkout-session/:id"
 to = "/.netlify/functions/checkout-session/:id"
 status = 200
 force = true
+
+[[redirects]]
+from = "/api/payment-success-webhook"
+to = "/.netlify/functions/payment-success-webhook"
+status = 200
+force = true

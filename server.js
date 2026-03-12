@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const Stripe = require("stripe");
+const { forwardPaymentSuccessWebhook } = require("./shared/payment-success-webhook");
 require("dotenv").config();
 
 const app = express();
@@ -130,6 +131,50 @@ app.get("/api/checkout-session/:id", async (req, res) => {
       error && error.message
         ? error.message
         : "Unable to retrieve checkout session.";
+    return res.status(500).json({ error: message });
+  }
+});
+
+app.post("/api/payment-success-webhook", async (req, res) => {
+  if (!req.body || typeof req.body !== "object") {
+    return res.status(400).json({ error: "Invalid payload." });
+  }
+
+  try {
+    const paymentInformation =
+      req.body.paymentInformation &&
+      typeof req.body.paymentInformation === "object"
+        ? { ...req.body.paymentInformation }
+        : {};
+
+    if (paymentInformation.sessionId) {
+      paymentInformation.stripeCheckoutSession =
+        await stripe.checkout.sessions.retrieve(paymentInformation.sessionId);
+    }
+
+    if (paymentInformation.paymentIntentId) {
+      paymentInformation.stripePaymentIntent = await stripe.paymentIntents.retrieve(
+        paymentInformation.paymentIntentId,
+      );
+    }
+
+    await forwardPaymentSuccessWebhook({
+      submittedAt:
+        typeof req.body.submittedAt === "string" && req.body.submittedAt
+          ? req.body.submittedAt
+          : new Date().toISOString(),
+      pageUrl: typeof req.body.pageUrl === "string" ? req.body.pageUrl : "",
+      checkoutTotal: Number(req.body.checkoutTotal) || 0,
+      formData: req.body.formData ?? null,
+      paymentInformation,
+    });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    const message =
+      error && error.message
+        ? error.message
+        : "Unable to send payment success webhook.";
     return res.status(500).json({ error: message });
   }
 });

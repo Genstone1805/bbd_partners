@@ -89,6 +89,7 @@ let pendingStripeCheckout = null;
 let stripePaymentInProgress = false;
 let stripeCheckoutRedirectInProgress = false;
 const PENDING_STRIPE_CHECKOUT_KEY = "pendingStripeCheckout";
+const PAYMENT_SUCCESS_WEBHOOK_ENDPOINT = "/api/payment-success-webhook";
 const DEFAULT_API_BASE_URL = "http://localhost:4242";
 const API_BASE_URL =
   (typeof window.API_BASE_URL === "string" && window.API_BASE_URL.trim()) ||
@@ -2949,6 +2950,52 @@ function clearPendingStripeCheckout() {
   sessionStorage.removeItem(PENDING_STRIPE_CHECKOUT_KEY);
 }
 
+function cloneJsonValue(value, fallback) {
+  try {
+    return JSON.parse(JSON.stringify(value));
+  } catch {
+    return fallback;
+  }
+}
+
+function buildPaymentSuccessPayload(ordersToSubmit, finalTotal, paymentInformation) {
+  return {
+    submittedAt: new Date().toISOString(),
+    pageUrl: window.location.href,
+    checkoutTotal: Number(finalTotal) || 0,
+    formData: cloneJsonValue(ordersToSubmit, []),
+    paymentInformation: cloneJsonValue(paymentInformation, {}),
+  };
+}
+
+async function sendPaymentSuccessWebhook(
+  ordersToSubmit,
+  finalTotal,
+  paymentInformation,
+) {
+  const response = await fetch(apiUrl(PAYMENT_SUCCESS_WEBHOOK_ENDPOINT), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(
+      buildPaymentSuccessPayload(ordersToSubmit, finalTotal, paymentInformation),
+    ),
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  const payload = contentType.includes("application/json")
+    ? await response.json()
+    : { error: await response.text() };
+
+  if (!response.ok) {
+    throw new Error(payload.error || "Unable to send payment success webhook.");
+  }
+
+  return payload;
+}
+
 function removeStripeParamsFromUrl() {
   const cleanUrl = `${window.location.pathname}${window.location.hash || ""}`;
   window.history.replaceState({}, document.title, cleanUrl);
@@ -2987,6 +3034,7 @@ async function handleStripeCheckoutReturn() {
     return;
   }
 
+  let verifiedCheckoutSession = null;
   try {
     const response = await fetch(
       apiUrl(`/api/checkout-session/${encodeURIComponent(sessionId)}`),
@@ -3010,6 +3058,8 @@ async function handleStripeCheckoutReturn() {
     if (payload.paymentStatus !== "paid") {
       throw new Error("Stripe checkout is not marked as paid.");
     }
+
+    verifiedCheckoutSession = payload;
   } catch (error) {
     const message =
       error && error.message
@@ -3024,24 +3074,41 @@ async function handleStripeCheckoutReturn() {
   }
 
   if (pendingCheckout) {
-    completeCheckoutAfterPaymentSuccess(
+    await completeCheckoutAfterPaymentSuccess(
       pendingCheckout.ordersToSubmit,
       pendingCheckout.finalTotal,
       sessionId,
+      {
+        source: "stripe_checkout",
+        sessionId,
+        checkoutSession: verifiedCheckoutSession,
+      },
     );
   } else {
-    await showAppAlert("Payment successful.", {
-      title: "Payment Complete",
-      variant: "success",
-    });
+    await onStripePaymentSuccess(
+      {
+        source: "stripe_checkout",
+        sessionId,
+        stripeReferenceId: sessionId,
+        checkoutSession: verifiedCheckoutSession,
+      },
+      [],
+      (verifiedCheckoutSession?.amountTotal || 0) / 100,
+    );
   }
 
   clearPendingStripeCheckout();
   removeStripeParamsFromUrl();
 }
 
-function onStripePaymentSuccess(_paymentDetails) {
-  showAppAlert("Payment successful.", {
+async function onStripePaymentSuccess(paymentDetails, ordersToSubmit, finalTotal) {
+  try {
+    await sendPaymentSuccessWebhook(ordersToSubmit, finalTotal, paymentDetails);
+  } catch (error) {
+    console.warn("Could not send payment success webhook:", error);
+  }
+
+  await showAppAlert("Payment successful.", {
     title: "Payment Complete",
     variant: "success",
   });
@@ -3262,10 +3329,15 @@ async function processStripePayment() {
       throw new Error("Payment was not completed.");
     }
 
-    completeCheckoutAfterPaymentSuccess(
+    await completeCheckoutAfterPaymentSuccess(
       pendingStripeCheckout.ordersToSubmit,
       pendingStripeCheckout.finalTotal,
       result.paymentIntent.id,
+      {
+        source: "stripe_payment_intent",
+        paymentIntentId: result.paymentIntent.id,
+        paymentIntent: result.paymentIntent,
+      },
     );
   } catch (error) {
     const message =
@@ -3286,18 +3358,18 @@ async function processStripePayment() {
   }
 }
 
-function completeCheckoutAfterPaymentSuccess(
+async function completeCheckoutAfterPaymentSuccess(
   ordersToSubmit,
   finalTotal,
   stripeReferenceId,
+  paymentDetails = {},
 ) {
   console.log("Checked out orders:", ordersToSubmit);
   console.log("Stripe payment reference:", stripeReferenceId);
-  onStripePaymentSuccess({
-    ordersToSubmit,
-    finalTotal,
+  await onStripePaymentSuccess({
+    ...paymentDetails,
     stripeReferenceId,
-  });
+  }, ordersToSubmit, finalTotal);
 
   orderCart = [];
   saveCart();
