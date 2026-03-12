@@ -1,6 +1,11 @@
+try {
+  require("dotenv").config();
+} catch {
+  // dotenv is optional when the platform injects environment variables directly.
+}
+
 function getPaymentSuccessWebhookUrl() {
-  const webhookUrl =
-    process.env.WEBHOOK_URL || process.env.PAYMENT_SUCCESS_WEBHOOK_URL;
+  const webhookUrl = process.env.WEBHOOK_URL;
 
   if (!webhookUrl) {
     throw new Error("Missing WEBHOOK_URL in environment.");
