@@ -1,9 +1,16 @@
-const PAYMENT_SUCCESS_WEBHOOK_URL =
-  process.env.PAYMENT_SUCCESS_WEBHOOK_URL ||
-  "https://hooks.zapier.com/hooks/catch/26757282/uxqv84m/";
+function getPaymentSuccessWebhookUrl() {
+  const webhookUrl =
+    process.env.WEBHOOK_URL || process.env.PAYMENT_SUCCESS_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    throw new Error("Missing WEBHOOK_URL in environment.");
+  }
+
+  return webhookUrl;
+}
 
 async function forwardPaymentSuccessWebhook(payload) {
-  const response = await fetch(PAYMENT_SUCCESS_WEBHOOK_URL, {
+  const response = await fetch(getPaymentSuccessWebhookUrl(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
