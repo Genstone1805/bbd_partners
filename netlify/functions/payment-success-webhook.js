@@ -33,7 +33,7 @@ async function buildWebhookPayload(body) {
   };
 }
 
-module.exports = async function handler(event) {
+exports.handler = async function handler(event) {
   const corsHeaders = getCorsHeaders(event.headers.origin);
 
   if (event.httpMethod === "OPTIONS") {
