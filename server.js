@@ -1,6 +1,7 @@
 const path = require("path");
 const express = require("express");
 const Stripe = require("stripe");
+const { normalizePaymentSuccessBody } = require("./shared/payment-success-form");
 const { forwardPaymentSuccessWebhook } = require("./shared/payment-success-webhook");
 require("dotenv").config();
 
@@ -52,6 +53,7 @@ function getBaseUrl(req, returnBaseUrl) {
 }
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use((req, res, next) => {
   const origin = req.get("origin");
   if (origin && isAllowedDevOrigin(origin)) {
@@ -136,15 +138,15 @@ app.get("/api/checkout-session/:id", async (req, res) => {
 });
 
 app.post("/api/payment-success-webhook", async (req, res) => {
-  if (!req.body || typeof req.body !== "object") {
+  const body = normalizePaymentSuccessBody(req.body);
+  if (!body || typeof body !== "object") {
     return res.status(400).json({ error: "Invalid payload." });
   }
 
   try {
     const paymentInformation =
-      req.body.paymentInformation &&
-      typeof req.body.paymentInformation === "object"
-        ? { ...req.body.paymentInformation }
+      body.paymentInformation && typeof body.paymentInformation === "object"
+        ? { ...body.paymentInformation }
         : {};
 
     if (paymentInformation.sessionId) {
@@ -160,12 +162,12 @@ app.post("/api/payment-success-webhook", async (req, res) => {
 
     await forwardPaymentSuccessWebhook({
       submittedAt:
-        typeof req.body.submittedAt === "string" && req.body.submittedAt
-          ? req.body.submittedAt
+        typeof body.submittedAt === "string" && body.submittedAt
+          ? body.submittedAt
           : new Date().toISOString(),
-      pageUrl: typeof req.body.pageUrl === "string" ? req.body.pageUrl : "",
-      checkoutTotal: Number(req.body.checkoutTotal) || 0,
-      formData: req.body.formData ?? null,
+      pageUrl: typeof body.pageUrl === "string" ? body.pageUrl : "",
+      checkoutTotal: Number(body.checkoutTotal) || 0,
+      formData: body.formData ?? null,
       paymentInformation,
     });
 

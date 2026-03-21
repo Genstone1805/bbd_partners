@@ -4,6 +4,11 @@ try {
   // dotenv is optional when the platform injects environment variables directly.
 }
 
+const {
+  FORM_URLENCODED_UTF8_CONTENT_TYPE,
+  buildPaymentSuccessFormBody,
+} = require("./payment-success-form");
+
 function getPaymentSuccessWebhookUrl() {
   const webhookUrl = process.env.WEBHOOK_URL;
 
@@ -18,9 +23,9 @@ async function forwardPaymentSuccessWebhook(payload) {
   const response = await fetch(getPaymentSuccessWebhookUrl(), {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": FORM_URLENCODED_UTF8_CONTENT_TYPE,
     },
-    body: JSON.stringify(payload),
+    body: buildPaymentSuccessFormBody(payload),
   });
 
   const responseText = await response.text();

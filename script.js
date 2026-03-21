@@ -90,6 +90,8 @@ let stripePaymentInProgress = false;
 let stripeCheckoutRedirectInProgress = false;
 const PENDING_STRIPE_CHECKOUT_KEY = "pendingStripeCheckout";
 const PAYMENT_SUCCESS_WEBHOOK_ENDPOINT = "/api/payment-success-webhook";
+const FORM_URLENCODED_UTF8_CONTENT_TYPE =
+  "application/x-www-form-urlencoded; charset=UTF-8";
 const DEFAULT_API_BASE_URL = "http://localhost:4242";
 const API_BASE_URL =
   (typeof window.API_BASE_URL === "string" && window.API_BASE_URL.trim()) ||
@@ -2968,32 +2970,56 @@ function buildPaymentSuccessPayload(ordersToSubmit, finalTotal, paymentInformati
   };
 }
 
+function buildPaymentSuccessFormBody(payload) {
+  const params = new URLSearchParams();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined) {
+      return;
+    }
+
+    const serializedValue =
+      value !== null && typeof value === "object"
+        ? JSON.stringify(value)
+        : String(value ?? "");
+
+    params.append(key, serializedValue);
+  });
+
+  return params.toString();
+}
+
 async function sendPaymentSuccessWebhook(
   ordersToSubmit,
   finalTotal,
   paymentInformation,
 ) {
+  const payload = buildPaymentSuccessPayload(
+    ordersToSubmit,
+    finalTotal,
+    paymentInformation,
+  );
   const response = await fetch(apiUrl(PAYMENT_SUCCESS_WEBHOOK_ENDPOINT), {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": FORM_URLENCODED_UTF8_CONTENT_TYPE,
       Accept: "application/json",
     },
-    body: JSON.stringify(
-      buildPaymentSuccessPayload(ordersToSubmit, finalTotal, paymentInformation),
-    ),
+    body: buildPaymentSuccessFormBody(payload),
   });
 
   const contentType = response.headers.get("content-type") || "";
-  const payload = contentType.includes("application/json")
+  const responsePayload = contentType.includes("application/json")
     ? await response.json()
     : { error: await response.text() };
 
   if (!response.ok) {
-    throw new Error(payload.error || "Unable to send payment success webhook.");
+    throw new Error(
+      responsePayload.error || "Unable to send payment success webhook.",
+    );
   }
 
-  return payload;
+  return responsePayload;
 }
 
 function removeStripeParamsFromUrl() {

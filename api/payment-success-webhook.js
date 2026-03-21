@@ -1,5 +1,6 @@
 const { getStripeClient } = require("./_lib/stripe");
 const { withCors, handleOptions } = require("./_lib/http");
+const { normalizePaymentSuccessBody } = require("../shared/payment-success-form");
 const { forwardPaymentSuccessWebhook } = require("../shared/payment-success-webhook");
 
 async function buildWebhookPayload(body) {
@@ -41,12 +42,13 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed." });
   }
 
-  if (!req.body || typeof req.body !== "object") {
+  const body = normalizePaymentSuccessBody(req.body);
+  if (!body || typeof body !== "object") {
     return res.status(400).json({ error: "Invalid payload." });
   }
 
   try {
-    const payload = await buildWebhookPayload(req.body);
+    const payload = await buildWebhookPayload(body);
     await forwardPaymentSuccessWebhook(payload);
     return res.status(200).json({ ok: true });
   } catch (error) {

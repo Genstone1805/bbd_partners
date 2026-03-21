@@ -1,5 +1,6 @@
 const { getStripeClient } = require("./_lib/stripe");
-const { json, getCorsHeaders, parseJsonBody } = require("./_lib/http");
+const { json, getCorsHeaders } = require("./_lib/http");
+const { normalizePaymentSuccessBody } = require("../../shared/payment-success-form");
 const { forwardPaymentSuccessWebhook } = require("../../shared/payment-success-webhook");
 
 async function buildWebhookPayload(body) {
@@ -48,7 +49,11 @@ exports.handler = async function handler(event) {
     return json(405, { error: "Method not allowed." }, corsHeaders);
   }
 
-  const body = parseJsonBody(event);
+  const rawBody =
+    event.isBase64Encoded && event.body
+      ? Buffer.from(event.body, "base64").toString("utf8")
+      : event.body;
+  const body = normalizePaymentSuccessBody(rawBody);
   if (!body || typeof body !== "object") {
     return json(400, { error: "Invalid payload." }, corsHeaders);
   }
