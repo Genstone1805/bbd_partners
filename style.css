@@ -388,6 +388,38 @@ body {
   gap: 10px;
   align-items: center;
 }
+.personalization-item {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.03);
+  padding: 12px;
+}
+.bulkRow--lineItem {
+  grid-template-columns: minmax(160px, 1.2fr) minmax(180px, 1.25fr) minmax(
+      120px,
+      0.8fr
+    ) 90px auto;
+  align-items: end;
+}
+.bulkRow--lineItem.bulkRow--no-name {
+  grid-template-columns: minmax(180px, 1.45fr) minmax(120px, 0.85fr) 90px auto;
+}
+.bulkCell {
+  min-width: 0;
+}
+.bulkRow__label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.bulkCell--actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: end;
+}
+.bulkCell--actions .miniBtn {
+  white-space: nowrap;
+}
 
 /* Choice cards */
 .choiceGrid {
@@ -518,6 +550,41 @@ body {
 .reviewKey {
   color: var(--muted);
 }
+.reviewItems {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+.reviewItem {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 12px;
+}
+.reviewItem__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: start;
+}
+.reviewItem__title {
+  font-weight: 900;
+}
+.reviewItem__meta {
+  display: grid;
+  gap: 6px;
+  margin-top: 10px;
+  color: rgba(15, 23, 42, 0.8);
+  font-size: 13px;
+}
+.reviewItem__line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.reviewEmpty {
+  color: var(--muted);
+}
 .money {
   font-variant-numeric: tabular-nums;
   font-weight: 900;
@@ -555,6 +622,34 @@ body {
   color: rgba(15, 23, 42, 0.86);
   font-weight: 700;
   font-size: 13px;
+}
+
+.addressPrefill {
+  margin-top: 14px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px dashed rgba(30, 58, 138, 0.35);
+  background: rgba(30, 58, 138, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+}
+.addressPrefill__content {
+  flex: 1 1 280px;
+}
+.addressPrefill__content .hint {
+  margin-top: 0;
+}
+.addressPrefill__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.addressPrefill__actions .btn {
+  width: auto;
 }
 
 .errors {
@@ -1115,6 +1210,21 @@ body {
   }
   .bulkRow {
     grid-template-columns: 1fr;
+  }
+  .addressPrefill {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .addressPrefill__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .addressPrefill__actions .btn,
+  .addressPrefill__actions .linklike {
+    width: 100%;
+    display: flex;
+    justify-content: center;
   }
   .shipOption {
     grid-template-columns: 18px 1fr;

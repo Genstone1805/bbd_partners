@@ -41,6 +41,11 @@ const POLO_GARMENTS = new Set([
   "womens-polo-20-26",
   "womens-polo-xs-2xl",
 ]);
+const ROW_BASED_DEPARTMENT_DECORATIONS = new Set([
+  "name-only",
+  "dept-only",
+  "dept-name",
+]);
 
 function loadCartFromSessionStorage() {
   const sessionCart = sessionStorage.getItem(CART_STORAGE_KEY);
@@ -109,6 +114,181 @@ function isPoloGarment(garment) {
   return POLO_GARMENTS.has(garment);
 }
 
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (match) => {
+    const map = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return map[match] || match;
+  });
+}
+
+function decorationRequiresIndividualName(decoration = orderData.decoration) {
+  return (
+    decoration === "logo-name" ||
+    decoration === "name-only" ||
+    decoration === "dept-name"
+  );
+}
+
+function decorationRequiresDepartment(decoration = orderData.decoration) {
+  return decoration === "dept-only" || decoration === "dept-name";
+}
+
+function isRowBasedDepartmentMode(
+  decoration = orderData.decoration,
+  orderType = orderData.orderType,
+) {
+  return (
+    orderType === "department" &&
+    ROW_BASED_DEPARTMENT_DECORATIONS.has(decoration)
+  );
+}
+
+function requiresRowEmbroideryName(
+  decoration = orderData.decoration,
+  orderType = orderData.orderType,
+) {
+  return (
+    isRowBasedDepartmentMode(decoration, orderType) && decoration !== "dept-only"
+  );
+}
+
+function getTotalQuantity(items = orderData.personalizationItems) {
+  return (Array.isArray(items) ? items : []).reduce(
+    (sum, item) => sum + (Math.max(parseInt(item?.quantity, 10) || 0, 0) || 0),
+    0,
+  );
+}
+
+function getAutomaticPriceTier(totalQuantity) {
+  if (totalQuantity >= 100) {
+    return "100+";
+  }
+  if (totalQuantity >= 50) {
+    return "50-99";
+  }
+  if (totalQuantity >= 25) {
+    return "25-49";
+  }
+  return "1-24";
+}
+
+function normalizePriceTierValue(priceTier) {
+  const validTiers = ["1-24", "25-49", "50-99", "100+"];
+  if (validTiers.includes(priceTier || "")) {
+    return priceTier;
+  }
+
+  return (
+    validTiers.find((tier) => String(priceTier || "").endsWith(tier)) || "1-24"
+  );
+}
+
+function getGarmentIdsForDecoration(decoration) {
+  return Object.keys(buildGarmentInfoMap()).filter((garmentId) =>
+    getDecorationChoicesForGarment(garmentId).some(
+      (option) => option.value === decoration,
+    ),
+  );
+}
+
+function getOrderGarmentIds(order = orderData) {
+  const items = Array.isArray(order.personalizationItems)
+    ? order.personalizationItems
+    : [];
+  const ids = Array.from(
+    new Set(
+      items
+        .map((item) => item?.garment)
+        .filter(Boolean),
+    ),
+  );
+
+  if (ids.length > 0) {
+    return ids;
+  }
+  return order.garment ? [order.garment] : [];
+}
+
+function getOrderGarmentSummary(order = orderData) {
+  const garmentIds = getOrderGarmentIds(order);
+  if (garmentIds.length === 0) {
+    return "Not selected";
+  }
+  if (garmentIds.length === 1) {
+    return getGarmentName(garmentIds[0]);
+  }
+  return `Mixed garments (${garmentIds.length} types)`;
+}
+
+function getPersonalizationItemsForReview(order = orderData) {
+  if (
+    Array.isArray(order.personalizationItems) &&
+    order.personalizationItems.length > 0
+  ) {
+    return order.personalizationItems;
+  }
+
+  if (!order.garment && !order.selectedSize) {
+    return [];
+  }
+
+  return [
+    {
+      id: "1",
+      department: order.decorationDepartment || "",
+      name: order.decorationName || "",
+      garment: order.garment || "",
+      size: order.selectedSize || "",
+      quantity: Math.max(parseInt(order.selectedQuantity, 10) || 1, 1),
+    },
+  ];
+}
+
+function resolveGarmentUnitPrice(garmentId, size, priceTier) {
+  const garmentInfo = buildGarmentInfoMap()[garmentId];
+  if (!garmentInfo?.prices) {
+    return 0;
+  }
+
+  const normalizedPriceTier = normalizePriceTierValue(priceTier);
+
+  if (!garmentInfo.sizeRangePrices) {
+    return garmentInfo.prices[normalizedPriceTier] || 0;
+  }
+
+  if (garmentId === "mens-olympus-softshell-jacket-s-8xl") {
+    const sTo5xlSizes = ["S", "M", "L", "XL", "XXL", "3XL", "5XL"];
+    const sixXlTo8xlSizes = ["6XL", "7XL", "8XL"];
+
+    if (sTo5xlSizes.includes(size)) {
+      return garmentInfo.sizeRangePrices["S-5XL"]?.[normalizedPriceTier] || 0;
+    }
+    if (sixXlTo8xlSizes.includes(size)) {
+      return garmentInfo.sizeRangePrices["6XL-8XL"]?.[normalizedPriceTier] || 0;
+    }
+  }
+
+  if (garmentId === "ladies-olympus-softshell-jacket-8-26") {
+    const eightTo22Sizes = ["8", "10", "12", "14", "16", "18", "20", "22"];
+    const twentyFourTo26Sizes = ["24", "26"];
+
+    if (eightTo22Sizes.includes(size)) {
+      return garmentInfo.sizeRangePrices["8-22"]?.[normalizedPriceTier] || 0;
+    }
+    if (twentyFourTo26Sizes.includes(size)) {
+      return garmentInfo.sizeRangePrices["24-26"]?.[normalizedPriceTier] || 0;
+    }
+  }
+
+  return garmentInfo.prices[normalizedPriceTier] || 0;
+}
+
 function getShippingFieldIds(prefix = "") {
   return {
     unitNumber: `${prefix}shippingUnitNumber`,
@@ -171,13 +351,98 @@ function clearShippingDetailsInForm(prefix = "") {
   );
 }
 
+function getSelectedDepotValue() {
+  return document.getElementById("depot")?.value || "";
+}
+
+function getSelectedDepotLabel() {
+  const depotSelect = document.getElementById("depot");
+  if (!depotSelect || depotSelect.selectedIndex < 0) {
+    return "";
+  }
+
+  return depotSelect.options[depotSelect.selectedIndex]?.text.trim() || "";
+}
+
+function parseShippingDetailsFromDepotValue(depotValue) {
+  if (!depotValue || depotValue === "other") {
+    return null;
+  }
+
+  const [streetValue = "", suburb = "", state = "", postcode = ""] =
+    depotValue.split("|");
+  const trimmedStreetValue = streetValue.trim();
+  if (!trimmedStreetValue) {
+    return null;
+  }
+
+  const streetMatch = trimmedStreetValue.match(
+    /^(?:(?<unitNumber>[^/]+)\/)?(?<streetNumber>[0-9A-Z-]+)\s+(?<streetAddress1>.+)$/i,
+  );
+  const groups = streetMatch?.groups || {};
+
+  return {
+    unitNumber: groups.unitNumber?.trim() || "",
+    streetNumber: groups.streetNumber?.trim() || "",
+    streetAddress1: groups.streetAddress1?.trim() || trimmedStreetValue,
+    streetAddress2: "",
+    suburb: suburb.trim(),
+    state: state.trim(),
+    postcode: postcode.trim(),
+  };
+}
+
+function updateShippingPrefillUI() {
+  const hint = document.getElementById("shippingAddressPrefillHint");
+  const prefillButton = document.getElementById("prefillShippingAddressBtn");
+  const depotValue = getSelectedDepotValue();
+  const depotLabel = getSelectedDepotLabel();
+  const details = parseShippingDetailsFromDepotValue(depotValue);
+
+  if (hint) {
+    if (!depotValue) {
+      hint.textContent =
+        "Select a cost centre above to unlock address prefill, or enter the delivery details manually below.";
+    } else if (depotValue === "other") {
+      hint.textContent =
+        "This cost centre does not have a saved address. Enter the delivery details manually below.";
+    } else if (depotLabel) {
+      hint.textContent = `${depotLabel} can be used to prefill the address below. You can still edit any field afterwards.`;
+    } else {
+      hint.textContent =
+        "Use the selected cost centre to prefill the address below. You can still edit any field afterwards.";
+    }
+  }
+
+  if (prefillButton) {
+    prefillButton.disabled = !details;
+  }
+}
+
+function prefillShippingAddressFromDepot() {
+  const details = parseShippingDetailsFromDepotValue(getSelectedDepotValue());
+  if (!details) {
+    return;
+  }
+
+  applyShippingDetailsToForm(details);
+  clearAddToCartErrors();
+  renderLiveSummaryPanel();
+}
+
+function clearShippingAddressFields() {
+  clearShippingDetailsInForm();
+  clearAddToCartErrors();
+  renderLiveSummaryPanel();
+}
+
 function formatShippingAddress(details) {
   if (!details) return "";
   return [
-    `Unit ${details.unitNumber}`,
-    `${details.streetNumber} ${details.streetAddress1}`,
+    details.unitNumber ? `Unit ${details.unitNumber}` : "",
+    [details.streetNumber, details.streetAddress1].filter(Boolean).join(" "),
     details.streetAddress2,
-    `${details.suburb}, ${details.state} ${details.postcode}`,
+    [details.suburb, details.state, details.postcode].filter(Boolean).join(" "),
   ]
     .filter(Boolean)
     .join(", ");
@@ -399,10 +664,7 @@ function calculateOrderLineTotals(order) {
     Array.isArray(order.personalizationItems) &&
     order.personalizationItems.length > 0;
   const totalQuantity = hasPersonalizationItems
-    ? order.personalizationItems.reduce(
-        (sum, item) => sum + (item.quantity || 0),
-        0,
-      )
+    ? getTotalQuantity(order.personalizationItems)
     : Math.max(parseInt(order.selectedQuantity, 10) || 1, 1);
   const garmentTotal =
     typeof order.totalGarmentPrice === "number"
@@ -495,10 +757,7 @@ function renderLiveSummaryPanel() {
   }
 
   collectPersonalizationData();
-  const qty = orderData.personalizationItems.reduce(
-    (sum, item) => sum + (item.quantity || 0),
-    0,
-  );
+  const qty = getTotalQuantity(orderData.personalizationItems);
   const garmentTotal =
     typeof orderData.totalGarmentPrice === "number"
       ? orderData.totalGarmentPrice
@@ -514,11 +773,11 @@ function renderLiveSummaryPanel() {
     </div>
     <div class="summaryLine">
       <span class="summaryLine__k">Garment</span>
-      <span class="summaryLine__v">${orderData.garment ? getGarmentName(orderData.garment) : "Not selected"}</span>
+      <span class="summaryLine__v">${escapeHtml(getOrderGarmentSummary(orderData))}</span>
     </div>
     <div class="summaryLine">
       <span class="summaryLine__k">Decoration</span>
-      <span class="summaryLine__v">${orderData.decoration ? getDecorationName(orderData.decoration) : "Not selected"}</span>
+      <span class="summaryLine__v">${escapeHtml(orderData.decoration ? getDecorationName(orderData.decoration) : "Not selected")}</span>
     </div>
     <div class="summaryLine">
       <span class="summaryLine__k">Qty</span>
@@ -554,16 +813,18 @@ function renderCartDropdown() {
   orderCart.forEach((order, index) => {
     const { totalQuantity, orderTotal } = calculateOrderLineTotals(order);
     const typeLabel = order.orderType === "department" ? "Department" : "Individual";
+    const garmentSummary = getOrderGarmentSummary(order);
+    const decorationSummary = getDecorationName(order.decoration);
 
     quickHtml += `
       <div class="quickItem">
         <div class="quickItem__top">
-          <div class="quickItem__title">Order #${order.orderNumber} (${typeLabel})</div>
+          <div class="quickItem__title">Order #${order.orderNumber} (${escapeHtml(typeLabel)})</div>
           <div class="money">$${orderTotal.toFixed(2)}</div>
         </div>
         <div class="quickItem__meta">
-          <div>${getGarmentName(order.garment)}</div>
-          <div>${getDecorationName(order.decoration)}</div>
+          <div>${escapeHtml(garmentSummary)}</div>
+          <div>${escapeHtml(decorationSummary)}</div>
           <div>${totalQuantity} item(s)</div>
         </div>
         <div class="quickItem__actions">
@@ -576,12 +837,12 @@ function renderCartDropdown() {
     drawerHtml += `
       <div class="drawerItem">
         <div class="drawerItem__top">
-          <div class="drawerItem__title">Order #${order.orderNumber} (${typeLabel})</div>
+          <div class="drawerItem__title">Order #${order.orderNumber} (${escapeHtml(typeLabel)})</div>
           <div class="money">$${orderTotal.toFixed(2)}</div>
         </div>
         <div class="drawerItem__meta">
-          <div>${getGarmentName(order.garment)}</div>
-          <div>${getDecorationName(order.decoration)}</div>
+          <div>${escapeHtml(garmentSummary)}</div>
+          <div>${escapeHtml(decorationSummary)}</div>
           <div>${totalQuantity} item(s)</div>
         </div>
         <div class="quickItem__actions">
@@ -678,57 +939,17 @@ function setActiveSection(sectionNumber) {
 
 // Section navigation
 function nextSection(current) {
-  // Validate section 2 before proceeding (garment and decoration must be selected)
   if (current === 2) {
-    if (!orderData.garment) {
-      showAppAlert("Please select a garment type.", {
-        title: "Garment Required",
+    const validationState = getSection2ValidationState();
+    if (!validationState.isValid) {
+      showAppAlert(validationState.errors[0], {
+        title: "Step 2 Incomplete",
         variant: "warning",
       });
       return;
     }
-    if (!orderData.decoration) {
-      showAppAlert("Please select a decoration option.", {
-        title: "Decoration Required",
-        variant: "warning",
-      });
-      return;
-    }
-    // Validate decoration-specific fields
-    if (orderData.decoration === "logo-only" || orderData.decoration === "logo-name") {
-      if (!orderData.logo) {
-        showAppAlert("Please select a logo.", {
-          title: "Logo Required",
-          variant: "warning",
-        });
-        return;
-      }
-    }
-    if (orderData.decoration === "logo-name" || orderData.decoration === "name-only" || orderData.decoration === "dept-name") {
-      if (!orderData.decorationName || orderData.decorationName.trim() === "") {
-        showAppAlert("Please enter the individual person's name.", {
-          title: "Name Required",
-          variant: "warning",
-        });
-        return;
-      }
-      if (!orderData.nameApprovalChecked) {
-        showAppAlert("Please confirm the cost centre approval disclaimer.", {
-          title: "Approval Required",
-          variant: "warning",
-        });
-        return;
-      }
-    }
-    if (orderData.decoration === "dept-only" || orderData.decoration === "dept-name") {
-      if (!orderData.decorationDepartment) {
-        showAppAlert("Please select a department.", {
-          title: "Department Required",
-          variant: "warning",
-        });
-        return;
-      }
-    }
+
+    updateGarmentPriceBasedOnQuantity();
   }
 
   currentSection = current + 1;
@@ -768,6 +989,7 @@ function resetPerOrderShippingState() {
   }
 
   clearShippingDetailsInForm();
+  updateShippingPrefillUI();
 
   document.querySelectorAll('input[name="shipping"]').forEach((input) => {
     input.checked = false;
@@ -796,14 +1018,194 @@ function updateSection3ShippingUI() {
   }
 }
 
+function getPersonalizationRowSnapshot() {
+  const rows = Array.from(document.querySelectorAll(".personalization-item"));
+  if (rows.length === 0) {
+    return Array.isArray(orderData.personalizationItems)
+      ? orderData.personalizationItems.map((item) => ({
+          id: item?.id || "",
+          department: item?.department || "",
+          name: item?.name || "",
+          garment: item?.garment || "",
+          size: item?.size || "",
+          quantity: Math.max(parseInt(item?.quantity, 10) || 1, 1),
+        }))
+      : [];
+  }
+
+  return rows.map((row, index) => ({
+    id: row.dataset.personId || `${index + 1}`,
+    department: orderData.decorationDepartment || "",
+    name: row.querySelector('[data-field="name"]')?.value.trim() || "",
+    garment: row.querySelector('[data-field="garment"]')?.value || "",
+    size: row.querySelector('[data-field="size"]')?.value || "",
+    quantity: Math.max(
+      parseInt(row.querySelector('[data-field="quantity"]')?.value, 10) || 1,
+      1,
+    ),
+  }));
+}
+
+function buildGarmentOptionsMarkup(selectedGarment = "") {
+  const garmentIds = isRowBasedDepartmentMode()
+    ? getGarmentIdsForDecoration(orderData.decoration)
+    : Object.keys(buildGarmentInfoMap());
+
+  const options = garmentIds
+    .map((garmentId) => {
+      const selected = garmentId === selectedGarment ? ' selected' : "";
+      return `<option value="${escapeHtml(garmentId)}"${selected}>${escapeHtml(getGarmentName(garmentId))}</option>`;
+    })
+    .join("");
+
+  return `<option value="">Select garment...</option>${options}`;
+}
+
+function buildSizeOptionsMarkup(garmentId, selectedSize = "") {
+  const sizes = buildGarmentInfoMap()[garmentId]?.sizes || [];
+  const options = sizes
+    .map((size) => {
+      const selected = size === selectedSize ? ' selected' : "";
+      return `<option value="${escapeHtml(size)}"${selected}>${escapeHtml(size)}</option>`;
+    })
+    .join("");
+
+  return `<option value="">Select size...</option>${options}`;
+}
+
+function buildLegacyDepartmentRowMarkup(itemId, item = {}) {
+  const nameValue = escapeHtml(item.name || "");
+  const quantityValue = Math.max(parseInt(item.quantity, 10) || 1, 1);
+
+  return `
+    <div class="personalization-item" id="person-${itemId}" data-person-id="${itemId}">
+      <div class="bulkRow">
+        <input type="text" class="input" placeholder="Person / recipient name (optional)" data-field="name" value="${nameValue}">
+        <input type="number" class="input" min="1" value="${quantityValue}" data-field="quantity">
+        ${
+          itemId > 1
+            ? `<button class="miniBtn miniBtn--danger" type="button" onclick="removePersonalizationItem(${itemId})">Remove</button>`
+            : `<span></span>`
+        }
+      </div>
+    </div>
+  `;
+}
+
+function buildRowBasedDepartmentRowMarkup(itemId, item = {}) {
+  const showEmbroideryName = requiresRowEmbroideryName();
+  const rowClass = showEmbroideryName
+    ? "bulkRow bulkRow--lineItem"
+    : "bulkRow bulkRow--lineItem bulkRow--no-name";
+  const quantityValue = Math.max(parseInt(item.quantity, 10) || 1, 1);
+
+  return `
+    <div class="personalization-item" id="person-${itemId}" data-person-id="${itemId}">
+      <div class="${rowClass}">
+        ${
+          showEmbroideryName
+            ? `
+              <div class="bulkCell">
+                <label class="label required bulkRow__label">Embroidery: first name</label>
+                <input type="text" class="input" placeholder="Required" data-field="name" value="${escapeHtml(item.name || "")}">
+              </div>
+            `
+            : ""
+        }
+        <div class="bulkCell">
+          <label class="label required bulkRow__label">Garment type</label>
+          <select class="select" data-field="garment">
+            ${buildGarmentOptionsMarkup(item.garment || "")}
+          </select>
+        </div>
+        <div class="bulkCell">
+          <label class="label required bulkRow__label">Size</label>
+          <select class="select" data-field="size">
+            ${buildSizeOptionsMarkup(item.garment || "", item.size || "")}
+          </select>
+        </div>
+        <div class="bulkCell">
+          <label class="label required bulkRow__label">Qty</label>
+          <input type="number" class="input" min="1" value="${quantityValue}" data-field="quantity">
+        </div>
+        <div class="bulkCell bulkCell--actions">
+          ${
+            itemId > 1
+              ? `<button class="miniBtn miniBtn--danger" type="button" onclick="removePersonalizationItem(${itemId})">Remove</button>`
+              : `<span></span>`
+          }
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function buildPersonalizationItemMarkup(itemId, item = {}) {
+  if (isRowBasedDepartmentMode()) {
+    return buildRowBasedDepartmentRowMarkup(itemId, item);
+  }
+  return buildLegacyDepartmentRowMarkup(itemId, item);
+}
+
+function renderPersonalizationItems(items = orderData.personalizationItems) {
+  const container = document.getElementById("personalizationItems");
+  if (!container) return;
+
+  const normalizedItems =
+    Array.isArray(items) && items.length > 0
+      ? items
+      : [
+          {
+            name: "",
+            garment: "",
+            size: "",
+            quantity: 1,
+          },
+        ];
+
+  personalizationCount = 0;
+  container.innerHTML = normalizedItems
+    .map((item) => {
+      personalizationCount += 1;
+      return buildPersonalizationItemMarkup(personalizationCount, item);
+    })
+    .join("");
+}
+
 function syncDepartmentBulkUI() {
   const bulkFields = document.getElementById("departmentBulkFields");
   const quantityField = document.getElementById("quantityField");
   const addPersonBtn = document.getElementById("addPersonBtn");
+  const garmentSelectionField = document.getElementById("garmentSelectionField");
+  const sizeSelectionGroup = document.getElementById("sizeSelectionGroup");
+  const priceSelectionGroup = document.getElementById("priceSelectionGroup");
+  const priceDisplayGroup = document.getElementById("priceDisplayGroup");
   const isDepartmentOrder = orderData.orderType === "department";
+  const rowBasedMode = isRowBasedDepartmentMode();
+  const garmentInfo = buildGarmentInfoMap()[orderData.garment];
+  const currentItems = getPersonalizationRowSnapshot();
 
   if (bulkFields) {
     bulkFields.style.display = isDepartmentOrder ? "block" : "none";
+  }
+
+  if (garmentSelectionField) {
+    garmentSelectionField.style.display = rowBasedMode ? "none" : "block";
+  }
+
+  if (sizeSelectionGroup) {
+    sizeSelectionGroup.style.display =
+      !rowBasedMode && garmentInfo?.sizes?.length ? "block" : "none";
+  }
+
+  if (priceSelectionGroup) {
+    priceSelectionGroup.style.display =
+      !rowBasedMode && garmentInfo?.prices ? "block" : "none";
+  }
+
+  if (priceDisplayGroup) {
+    priceDisplayGroup.style.display =
+      !rowBasedMode && typeof garmentInfo?.price === "number" ? "block" : "none";
   }
 
   if (quantityField) {
@@ -820,6 +1222,7 @@ function syncDepartmentBulkUI() {
     if (addPersonBtn) {
       addPersonBtn.disabled = true;
     }
+    validateSection2();
     return;
   }
 
@@ -827,7 +1230,9 @@ function syncDepartmentBulkUI() {
     addPersonBtn.disabled = false;
   }
 
+  renderPersonalizationItems(currentItems);
   initializePersonalizationSection();
+  validateSection2();
 }
 
 function updateDecorationOptionsForGarment(garment) {
@@ -885,6 +1290,11 @@ function selectOrderType(type, element) {
     orderData.department = "";
   }
 
+  updateDecorationOptionsForGarment(
+    type === "department"
+      ? ""
+      : document.getElementById("garmentSelect")?.value || "",
+  );
   syncDepartmentBulkUI();
   updateSection3ShippingUI();
   updateFinalTotal();
@@ -896,6 +1306,7 @@ function selectOrderType(type, element) {
 function selectDepot() {
   const selectedValue = document.getElementById("depot").value;
   orderData.depot = selectedValue; // For individual orders, store as depot
+  updateShippingPrefillUI();
   validateSection1();
 }
 
@@ -941,6 +1352,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   validateSection1();
   validateSection2();
   updateFinalTotal();
+  updateShippingPrefillUI();
   renderLiveSummaryPanel();
 
   const sg = document.getElementById("viewSizeGuides");
@@ -1054,6 +1466,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (approval) {
     approval.addEventListener("change", function () {
       saveNameApproval(this.checked);
+      renderLiveSummaryPanel();
     });
   }
 
@@ -1167,6 +1580,24 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   }
 
+  const prefillShippingAddressBtn = document.getElementById(
+    "prefillShippingAddressBtn",
+  );
+  if (prefillShippingAddressBtn) {
+    prefillShippingAddressBtn.addEventListener("click", function () {
+      prefillShippingAddressFromDepot();
+    });
+  }
+
+  const clearShippingAddressBtn = document.getElementById(
+    "clearShippingAddressBtn",
+  );
+  if (clearShippingAddressBtn) {
+    clearShippingAddressBtn.addEventListener("click", function () {
+      clearShippingAddressFields();
+    });
+  }
+
   Object.values(getShippingFieldIds()).forEach((fieldId) => {
     const input = document.getElementById(fieldId);
     if (!input) return;
@@ -1193,9 +1624,29 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (addPersonBtn) {
     addPersonBtn.addEventListener("click", function () {
       addPersonalizationItem();
-      updateGarmentPriceBasedOnQuantity();
       renderLiveSummaryPanel();
     });
+  }
+
+  const personalizationItemsContainer = document.getElementById(
+    "personalizationItems",
+  );
+  if (personalizationItemsContainer) {
+    const handleDynamicPersonalizationChange = function (event) {
+      if (!event.target?.matches?.("[data-field]")) {
+        return;
+      }
+      handlePersonalizationFieldChange(event.target);
+    };
+
+    personalizationItemsContainer.addEventListener(
+      "input",
+      handleDynamicPersonalizationChange,
+    );
+    personalizationItemsContainer.addEventListener(
+      "change",
+      handleDynamicPersonalizationChange,
+    );
   }
 
   const checkoutDeliverySelect = document.getElementById(
@@ -1688,62 +2139,76 @@ function selectDecoration(decoration) {
 
   orderData.decorationPrice = prices[decoration] || 0;
 
-  // Show/hide fields based on decoration type
   const logoSelectionGroup = document.getElementById("logoSelectionGroup");
   const nameInputGroup = document.getElementById("nameInputGroup");
+  const nameApprovalGroup = document.getElementById("nameApprovalGroup");
   const deptSelectionGroup = document.getElementById("deptSelectionGroup");
+  const rowBasedMode = isRowBasedDepartmentMode(decoration);
+  const showGlobalNameInput =
+    decorationRequiresIndividualName(decoration) && !rowBasedMode;
+  const showNameApproval = decorationRequiresIndividualName(decoration);
+  const showDepartmentSelect = decorationRequiresDepartment(decoration);
 
-  // Reset all fields
   if (logoSelectionGroup) logoSelectionGroup.style.display = "none";
   if (nameInputGroup) nameInputGroup.style.display = "none";
+  if (nameApprovalGroup) nameApprovalGroup.style.display = "none";
   if (deptSelectionGroup) deptSelectionGroup.style.display = "none";
 
-  // Logo only: show logo dropdown
-  if (decoration === "logo-only") {
+  if (decoration === "logo-only" || decoration === "logo-name") {
     if (logoSelectionGroup) logoSelectionGroup.style.display = "block";
   }
-  // Logo + Name: show logo dropdown + name input
-  else if (decoration === "logo-name") {
-    if (logoSelectionGroup) logoSelectionGroup.style.display = "block";
-    if (nameInputGroup) nameInputGroup.style.display = "block";
+  if (showGlobalNameInput && nameInputGroup) {
+    nameInputGroup.style.display = "block";
   }
-  // Name only: show name input only
-  else if (decoration === "name-only") {
-    if (nameInputGroup) nameInputGroup.style.display = "block";
+  if (showNameApproval && nameApprovalGroup) {
+    nameApprovalGroup.style.display = "block";
   }
-  // Department only: show department dropdown
-  else if (decoration === "dept-only") {
-    if (deptSelectionGroup) deptSelectionGroup.style.display = "block";
-  }
-  // Department + Name: show department dropdown + name input
-  else if (decoration === "dept-name") {
-    if (deptSelectionGroup) deptSelectionGroup.style.display = "block";
-    if (nameInputGroup) nameInputGroup.style.display = "block";
+  if (showDepartmentSelect && deptSelectionGroup) {
+    deptSelectionGroup.style.display = "block";
   }
 
-  // Clear values when switching decoration types
   if (decoration !== "logo-only" && decoration !== "logo-name") {
     document.getElementById("logoSelect").value = "";
     orderData.logo = "";
   }
-  if (decoration !== "dept-only" && decoration !== "dept-name") {
+  if (!showDepartmentSelect) {
     document.getElementById("decorationDeptSelect").value = "";
     orderData.decorationDepartment = "";
   }
-  if (
-    decoration !== "logo-name" &&
-    decoration !== "name-only" &&
-    decoration !== "dept-name"
-  ) {
+  if (!showGlobalNameInput) {
     document.getElementById("decorationNameInput").value = "";
     orderData.decorationName = "";
+  }
+  if (!showNameApproval) {
     const nameApprovalCheckbox = document.getElementById("nameApprovalChecked");
     if (nameApprovalCheckbox) {
       nameApprovalCheckbox.checked = false;
     }
     orderData.nameApprovalChecked = false;
   }
+  if (rowBasedMode) {
+    const garmentSelect = document.getElementById("garmentSelect");
+    const sizeSelect = document.getElementById("sizeSelect");
+    const sizeMetricSelect = document.getElementById("sizeMetricSelect");
+    if (garmentSelect) {
+      garmentSelect.value = "";
+    }
+    if (sizeSelect) {
+      sizeSelect.innerHTML = '<option value="">Select size...</option>';
+    }
+    if (sizeMetricSelect) {
+      sizeMetricSelect.innerHTML =
+        '<option value="">Select measurement...</option>';
+    }
+    orderData.garment = "";
+    orderData.selectedSize = "";
+    orderData.selectedSizeMetric = "";
+    orderData.garmentPrice = 0;
+    orderData.totalGarmentPrice = 0;
+  }
 
+  syncDepartmentBulkUI();
+  updateGarmentPriceBasedOnQuantity();
   validateSection2();
 }
 
@@ -1767,46 +2232,81 @@ function saveNameApproval(isChecked) {
 // Department selection
 function saveDecorationDepartment(dept) {
   orderData.decorationDepartment = dept;
+  collectPersonalizationData();
   validateSection2();
+}
+
+function getSection2ValidationState() {
+  collectPersonalizationData();
+
+  const decoration = orderData.decoration;
+  const errors = [];
+  const rowBasedMode = isRowBasedDepartmentMode(decoration);
+
+  if (!decoration) {
+    errors.push("Please select a decoration option.");
+  }
+
+  if (!rowBasedMode) {
+    if (!orderData.garment) {
+      errors.push("Please select a garment type.");
+    }
+    if (!orderData.selectedSize) {
+      errors.push("Please select a size.");
+    }
+  }
+
+  if ((decoration === "logo-only" || decoration === "logo-name") && !orderData.logo) {
+    errors.push("Please select a logo.");
+  }
+
+  if (decorationRequiresDepartment(decoration) && !orderData.decorationDepartment) {
+    errors.push("Please select a department.");
+  }
+
+  if (decorationRequiresIndividualName(decoration) && !orderData.nameApprovalChecked) {
+    errors.push("Please confirm the cost centre approval disclaimer.");
+  }
+
+  if (decorationRequiresIndividualName(decoration) && !rowBasedMode) {
+    if (!orderData.decorationName || orderData.decorationName.trim() === "") {
+      errors.push("Please enter the individual person's name.");
+    }
+  }
+
+  if (rowBasedMode) {
+    if (orderData.personalizationItems.length === 0) {
+      errors.push("Please add at least one department line item.");
+    }
+
+    orderData.personalizationItems.forEach((item, index) => {
+      const rowLabel = `Line item ${index + 1}`;
+      if (requiresRowEmbroideryName(decoration) && !item.name.trim()) {
+        errors.push(`${rowLabel}: please enter the embroidery first name.`);
+      }
+      if (!item.garment) {
+        errors.push(`${rowLabel}: please select a garment type.`);
+      }
+      if (!item.size) {
+        errors.push(`${rowLabel}: please select a size.`);
+      }
+    });
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
 }
 
 // Validate section 2 (garment and decoration)
 function validateSection2() {
-  const decoration = orderData.decoration;
-  let isValid = false;
-
-  if (decoration === "no-personalisation") {
-    isValid = true;
-  } else if (decoration === "logo-only") {
-    isValid = orderData.logo && orderData.logo !== "";
-  } else if (decoration === "logo-name") {
-    isValid =
-      orderData.logo &&
-      orderData.logo !== "" &&
-      orderData.decorationName &&
-      orderData.decorationName.trim() !== "" &&
-      orderData.nameApprovalChecked;
-  } else if (decoration === "name-only") {
-    isValid =
-      orderData.decorationName &&
-      orderData.decorationName.trim() !== "" &&
-      orderData.nameApprovalChecked;
-  } else if (decoration === "dept-only") {
-    isValid =
-      orderData.decorationDepartment && orderData.decorationDepartment !== "";
-  } else if (decoration === "dept-name") {
-    isValid =
-      orderData.decorationDepartment &&
-      orderData.decorationDepartment !== "" &&
-      orderData.decorationName &&
-      orderData.decorationName.trim() !== "" &&
-      orderData.nameApprovalChecked;
+  const validationState = getSection2ValidationState();
+  const nextButton = document.getElementById("next2");
+  if (nextButton) {
+    nextButton.disabled = !validationState.isValid;
   }
-
-  // Enable next2 button if garment, size, and decoration are valid
-  const garmentSelected = orderData.garment && orderData.garment !== "";
-  const sizeSelected = orderData.selectedSize && orderData.selectedSize !== "";
-  document.getElementById("next2").disabled = !(garmentSelected && sizeSelected && isValid);
+  return validationState.isValid;
 }
 
 // Section 4: Personalization Items
@@ -1814,48 +2314,37 @@ function initializePersonalizationSection() {
   if (orderData.orderType !== "department") {
     return;
   }
-  if (personalizationCount === 0) {
-    addPersonalizationItem();
+  if (document.querySelectorAll(".personalization-item").length === 0) {
+    renderPersonalizationItems(orderData.personalizationItems);
   }
 }
 
 function addPersonalizationItem() {
-  personalizationCount++;
-  const container = document.getElementById("personalizationItems");
-  if (!container) return;
-
-  const itemHTML = `
-    <div class="personalization-item" id="person-${personalizationCount}">
-      <div class="bulkRow">
-        <input type="text" class="input" placeholder="Person / recipient name (optional)" data-field="name" data-person="${personalizationCount}">
-        <input type="number" class="input" min="1" value="1" data-field="quantity" data-person="${personalizationCount}" oninput="updateGarmentPriceBasedOnQuantity()">
-        ${
-          personalizationCount > 1
-            ? `<button class="miniBtn miniBtn--danger" type="button" onclick="removePersonalizationItem(${personalizationCount})">Remove</button>`
-            : `<span></span>`
-        }
-      </div>
-    </div>
-  `;
-
-  container.insertAdjacentHTML("beforeend", itemHTML);
+  const items = getPersonalizationRowSnapshot();
+  items.push({
+    name: "",
+    garment: "",
+    size: "",
+    quantity: 1,
+  });
+  renderPersonalizationItems(items);
+  updateGarmentPriceBasedOnQuantity();
+  validateSection2();
 }
 
 function removePersonalizationItem(id) {
-  const row = document.getElementById(`person-${id}`);
-  if (row) {
-    row.remove();
-  }
-  orderData.personalizationItems = orderData.personalizationItems.filter(
-    (item) => item.id !== id,
+  const remainingItems = getPersonalizationRowSnapshot().filter(
+    (item) => String(item.id) !== String(id),
   );
-  if (
-    orderData.orderType === "department" &&
-    document.querySelectorAll(".personalization-item").length === 0
-  ) {
-    addPersonalizationItem();
+
+  if (orderData.orderType === "department" && remainingItems.length === 0) {
+    renderPersonalizationItems([]);
+  } else {
+    renderPersonalizationItems(remainingItems);
   }
+
   updateGarmentPriceBasedOnQuantity();
+  validateSection2();
   renderLiveSummaryPanel();
 }
 
@@ -1872,277 +2361,179 @@ function collectPersonalizationData() {
   orderData.selectedQuantity = selectedQuantity;
   orderData.personalizationItems = [];
 
-  const personalizationRows = document.querySelectorAll(".personalization-item");
+  const personalizationRows = Array.from(
+    document.querySelectorAll(".personalization-item"),
+  );
   if (personalizationRows.length === 0) {
+    if (isRowBasedDepartmentMode()) {
+      return;
+    }
+
     orderData.personalizationItems.push({
       id: "1",
       department: orderData.decorationDepartment || "",
       name: orderData.decorationName || "",
+      garment: orderData.garment || "",
       size: selectedSize,
       quantity: selectedQuantity,
     });
     return;
   }
 
-  personalizationRows.forEach((item) => {
-    const personId = item.id.split("-")[1];
+  personalizationRows.forEach((item, index) => {
+    const personId = item.dataset.personId || item.id.split("-")[1] || `${index + 1}`;
     const rowQuantity = Math.max(
       parseInt(item.querySelector('[data-field="quantity"]')?.value, 10) ||
         selectedQuantity,
       1,
     );
+    const rowGarment =
+      item.querySelector('[data-field="garment"]')?.value || orderData.garment || "";
+    const rowSize =
+      item.querySelector('[data-field="size"]')?.value || selectedSize;
 
     orderData.personalizationItems.push({
       id: personId,
-      department: item.querySelector('[data-field="department"]')?.value || "",
-      name: item.querySelector('[data-field="name"]')?.value || "",
-      size: selectedSize,
+      department: orderData.decorationDepartment || "",
+      name:
+        item.querySelector('[data-field="name"]')?.value.trim() ||
+        (isRowBasedDepartmentMode() ? "" : orderData.decorationName || ""),
+      garment: rowGarment,
+      size: rowSize,
       quantity: rowQuantity,
     });
   });
 }
 
+function handlePersonalizationFieldChange(target) {
+  if (!target || !target.closest(".personalization-item")) {
+    return;
+  }
+
+  clearAddToCartErrors();
+
+  if (target.dataset.field === "garment") {
+    const row = target.closest(".personalization-item");
+    const sizeSelect = row?.querySelector('[data-field="size"]');
+    const currentSize = sizeSelect?.value || "";
+
+    if (sizeSelect) {
+      sizeSelect.innerHTML = buildSizeOptionsMarkup(target.value, currentSize);
+      if (
+        currentSize &&
+        !Array.from(sizeSelect.options).some(
+          (option) => option.value === currentSize,
+        )
+      ) {
+        sizeSelect.value = "";
+      }
+    }
+  }
+
+  updateGarmentPriceBasedOnQuantity();
+  validateSection2();
+  renderLiveSummaryPanel();
+}
+
 // Function to update garment price based on total quantity ordered
 function updateGarmentPriceBasedOnQuantity() {
-  // Collect current personalization data to get updated quantities
   collectPersonalizationData();
 
-  // Get the selected price tier from the dropdown
-  const priceTierSelect = document.getElementById("priceTierSelect");
-  const selectedPriceTier = priceTierSelect ? priceTierSelect.value : "";
+  if (isRowBasedDepartmentMode()) {
+    const groupedItems = new Map();
+    orderData.personalizationItems.forEach((item) => {
+      if (!item.garment || !item.size) {
+        return;
+      }
 
-  // If no price tier is selected, use the automatic calculation
-  if (!selectedPriceTier) {
-    // Calculate total quantity across all personalization items
-    const totalQuantity = orderData.personalizationItems.reduce(
-      (sum, item) => sum + (item.quantity || 0),
-      0,
+      const existingGroup = groupedItems.get(item.garment) || {
+        totalQuantity: 0,
+        items: [],
+      };
+      existingGroup.totalQuantity += item.quantity || 0;
+      existingGroup.items.push(item);
+      groupedItems.set(item.garment, existingGroup);
+    });
+
+    let totalPrice = 0;
+    let totalQuantity = 0;
+    groupedItems.forEach((group, garmentId) => {
+      const priceTier = getAutomaticPriceTier(group.totalQuantity);
+      group.items.forEach((item) => {
+        const unitPrice = resolveGarmentUnitPrice(
+          garmentId,
+          item.size,
+          priceTier,
+        );
+        totalPrice += unitPrice * (item.quantity || 0);
+        totalQuantity += item.quantity || 0;
+      });
+    });
+
+    orderData.totalGarmentPrice = totalPrice;
+    orderData.garmentPrice = totalQuantity ? totalPrice / totalQuantity : 0;
+    const priceTierSelect = document.getElementById("priceTierSelect");
+    if (priceTierSelect) {
+      priceTierSelect.value = "";
+    }
+  } else {
+    const priceTierSelect = document.getElementById("priceTierSelect");
+    const totalQuantity = getTotalQuantity(orderData.personalizationItems);
+    const fallbackTier = getAutomaticPriceTier(totalQuantity);
+    const selectedPriceTier = normalizePriceTierValue(
+      priceTierSelect?.value || fallbackTier,
     );
 
-    // Determine the price tier based on total quantity
-    let priceTier;
-    if (totalQuantity >= 100) {
-      priceTier = "100+";
-    } else if (totalQuantity >= 50) {
-      priceTier = "50-99";
-    } else if (totalQuantity >= 25) {
-      priceTier = "25-49";
-    } else {
-      priceTier = "1-24";
+    if (priceTierSelect && !priceTierSelect.value && orderData.garment) {
+      priceTierSelect.value = selectedPriceTier;
     }
 
-    // Update the price tier dropdown to reflect the automatic selection
-    if (priceTierSelect) {
-      priceTierSelect.value = priceTier;
-    }
-
-    // Use the automatic price tier
-    updateGarmentPriceWithTier(priceTier);
-  } else {
-    // Use the manually selected price tier
     updateGarmentPriceWithTier(selectedPriceTier);
   }
 
-  // Update the order summary if we're on that section
   if (currentSection === 3) {
     generateOrderSummary();
   }
 
-  // Ensure the price input (if visible) reflects the latest computed price
   updatePriceDisplay();
   renderLiveSummaryPanel();
 }
 
 // Helper function to update garment price with a specific tier
 function updateGarmentPriceWithTier(priceTier) {
-  const validTiers = ["1-24", "25-49", "50-99", "100+"];
-  let normalizedPriceTier = priceTier;
-  if (!validTiers.includes(normalizedPriceTier || "")) {
-    const matchedTier = validTiers.find((tier) =>
-      (normalizedPriceTier || "").endsWith(tier),
+  const normalizedPriceTier = normalizePriceTierValue(priceTier);
+  const garmentInfo = buildGarmentInfoMap()[orderData.garment];
+
+  if (!orderData.garment || !garmentInfo?.prices) {
+    orderData.garmentPrice = 0;
+    orderData.totalGarmentPrice = 0;
+    updatePriceDisplay();
+    return;
+  }
+
+  const totalQuantity = getTotalQuantity(orderData.personalizationItems);
+  if (garmentInfo.sizeRangePrices) {
+    let totalPrice = 0;
+    orderData.personalizationItems.forEach((item) => {
+      if (!item.size) return;
+      totalPrice +=
+        resolveGarmentUnitPrice(orderData.garment, item.size, normalizedPriceTier) *
+        (item.quantity || 0);
+    });
+    orderData.totalGarmentPrice = totalPrice;
+    orderData.garmentPrice =
+      totalQuantity > 0
+        ? totalPrice / totalQuantity
+        : resolveGarmentUnitPrice(orderData.garment, orderData.selectedSize, normalizedPriceTier);
+  } else {
+    orderData.garmentPrice = resolveGarmentUnitPrice(
+      orderData.garment,
+      orderData.selectedSize,
+      normalizedPriceTier,
     );
-    normalizedPriceTier = matchedTier || "1-24";
+    orderData.totalGarmentPrice = orderData.garmentPrice * totalQuantity;
   }
 
-  // Update the garment price based on the selected garment and quantity tier
-  if (orderData.garment) {
-    // Use the simplified garmentInfo structure as specified
-    const garmentInfo = {
-      "mens-polo-xs-5xl": {
-        name: "Mens Polo 1065",
-      },
-      "mens-polo-5xl-10xl": {
-        name: "Mens Polo JB210 6XL +",
-      },
-      "womens-polo-xs-2xl": {
-        name: "Ladies Polo JH201W",
-      },
-      "womens-polo-20-26": {
-        name: "Ladies Polo 1165",
-      },
-      "premium-unisex-tech-jacket-2xl-5xl": {
-        name: "Podium Unisex Tech Jacket",
-        prices: {
-          "1-24": 93.0,
-          "25-49": 88.35,
-          "50-99": 86.0,
-          "100+": 79.1,
-        },
-      },
-      "mens-olympus-softshell-jacket-s-8xl": {
-        name: "Mens Olympus Softshell Jacket",
-        prices: {
-          "1-24": 68.0,
-          "25-49": 64.5,
-          "50-99": 62.9,
-          "100+": 57.8,
-        },
-        // Additional pricing based on size ranges
-        sizeRangePrices: {
-          "S-5XL": {
-            "1-24": 68.0,
-            "25-49": 64.5,
-            "50-99": 62.9,
-            "100+": 57.8,
-          },
-          "6XL-8XL": {
-            "1-24": 73.5,
-            "25-49": 69.85,
-            "50-99": 68.0,
-            "100+": 62.5,
-          },
-        },
-      },
-      "ladies-olympus-softshell-jacket-8-26": {
-        name: "Ladies Olympus Softshell Jacket",
-        prices: {
-          "1-24": 73.5,
-          "25-49": 69.85,
-          "50-99": 68.0,
-          "100+": 62.5,
-        },
-        // Additional pricing based on size ranges
-        sizeRangePrices: {
-          "8-22": {
-            "1-24": 68.0,
-            "25-49": 64.5,
-            "50-99": 62.9,
-            "100+": 57.8,
-          },
-          "24-26": {
-            "1-24": 73.5,
-            "25-49": 69.85,
-            "50-99": 68.0,
-            "100+": 62.5,
-          },
-        },
-      },
-    };
-
-    if (garmentInfo[orderData.garment]) {
-      if (!garmentInfo[orderData.garment].prices) {
-        orderData.garmentPrice = 0;
-        orderData.totalGarmentPrice = 0;
-        updatePriceDisplay();
-        return;
-      }
-
-      // Check if this garment has size-range specific pricing
-      if (garmentInfo[orderData.garment].sizeRangePrices) {
-        // Calculate the total price based on individual selections
-        let totalPrice = 0;
-        let itemCount = 0;
-
-        orderData.personalizationItems.forEach((item) => {
-          if (item.size) {
-            itemCount += item.quantity;
-
-            // Determine which size range this size belongs to
-            let applicablePrice =
-              garmentInfo[orderData.garment].prices[normalizedPriceTier]; // fallback
-
-            // For mens-olympus-softshell-jacket-s-8xl
-            // Sizes: S, M, L, XL, XXL, 3XL, 5XL, 6XL, 7XL, 8XL
-            // S-5XL includes: S, M, L, XL, XXL, 3XL, 5XL
-            // 6XL-8XL includes: 6XL, 7XL, 8XL
-            if (orderData.garment === "mens-olympus-softshell-jacket-s-8xl") {
-              const sTo5xlSizes = ["S", "M", "L", "XL", "XXL", "3XL", "5XL"];
-              const sixXlTo8xlSizes = ["6XL", "7XL", "8XL"];
-
-              if (sTo5xlSizes.includes(item.size)) {
-                applicablePrice =
-                  garmentInfo[orderData.garment].sizeRangePrices["S-5XL"][
-                    normalizedPriceTier
-                  ];
-              } else if (sixXlTo8xlSizes.includes(item.size)) {
-                applicablePrice =
-                  garmentInfo[orderData.garment].sizeRangePrices["6XL-8XL"][
-                    normalizedPriceTier
-                  ];
-              }
-            }
-            // For ladies-olympus-softshell-jacket-8-26
-            // Sizes: 8, 10, 12, 14, 16, 18, 20, 22, 24, 26
-            // 8-22 includes: 8, 10, 12, 14, 16, 18, 20, 22
-            // 24-26 includes: 24, 26
-            else if (
-              orderData.garment === "ladies-olympus-softshell-jacket-8-26"
-            ) {
-              const eightTo22Sizes = [
-                "8",
-                "10",
-                "12",
-                "14",
-                "16",
-                "18",
-                "20",
-                "22",
-              ];
-              const twentyFourTo26Sizes = ["24", "26"];
-
-              if (eightTo22Sizes.includes(item.size)) {
-                applicablePrice =
-                  garmentInfo[orderData.garment].sizeRangePrices["8-22"][
-                    normalizedPriceTier
-                  ];
-              } else if (twentyFourTo26Sizes.includes(item.size)) {
-                applicablePrice =
-                  garmentInfo[orderData.garment].sizeRangePrices["24-26"][
-                    normalizedPriceTier
-                  ];
-              }
-            }
-
-            // Add the price for this specific item to the total
-            totalPrice += applicablePrice * item.quantity;
-          }
-        });
-
-        // Store the total price for the garments
-        orderData.totalGarmentPrice = totalPrice;
-
-        // Calculate average price per unit for display purposes
-        if (itemCount > 0) {
-          orderData.garmentPrice = totalPrice / itemCount;
-        } else {
-          orderData.garmentPrice =
-            garmentInfo[orderData.garment].prices[normalizedPriceTier];
-        }
-      } else {
-        // Standard pricing (not dependent on size ranges)
-        orderData.garmentPrice =
-          garmentInfo[orderData.garment].prices[normalizedPriceTier];
-        orderData.totalGarmentPrice =
-          orderData.garmentPrice *
-          orderData.personalizationItems.reduce(
-            (sum, item) => sum + (item.quantity || 0),
-            0,
-          );
-      }
-    }
-  }
-
-  // Ensure price display reflects the final calculated price
   updatePriceDisplay();
 }
 
@@ -2152,6 +2543,7 @@ function generateOrderSummary() {
   updateSection3ShippingUI();
 
   const container = document.getElementById("orderSummaryContent");
+  const itemsMount = document.getElementById("personalizationReviewList");
   if (!container) {
     updateFinalTotal();
     return;
@@ -2162,11 +2554,9 @@ function generateOrderSummary() {
     depotSelect && depotSelect.selectedIndex >= 0
       ? depotSelect.options[depotSelect.selectedIndex].text
       : "Not selected";
+  const reviewItems = getPersonalizationItemsForReview(orderData);
 
-  const totalQuantity = orderData.personalizationItems.reduce(
-    (sum, item) => sum + item.quantity,
-    0,
-  );
+  const totalQuantity = getTotalQuantity(reviewItems);
   const garmentTotal =
     typeof orderData.totalGarmentPrice === "number"
       ? orderData.totalGarmentPrice
@@ -2176,9 +2566,16 @@ function generateOrderSummary() {
   const grandTotal = garmentTotal + decorationTotal + shippingTotal;
 
   const rows = [
-    ["Order type", orderData.orderType ? (orderData.orderType === "department" ? "Department" : "Individual") : "Not selected"],
+    [
+      "Order type",
+      orderData.orderType
+        ? orderData.orderType === "department"
+          ? "Department"
+          : "Individual"
+        : "Not selected",
+    ],
     ["Cost centre", depotText],
-    ["Garment", getGarmentName(orderData.garment)],
+    ["Garment", getOrderGarmentSummary(orderData)],
     ["Decoration", getDecorationName(orderData.decoration)],
     ["Quantity", `${totalQuantity} items`],
     ["Garment cost", `$${garmentTotal.toFixed(2)}`],
@@ -2187,7 +2584,7 @@ function generateOrderSummary() {
 
   rows.push(["Shipping", `$${shippingTotal.toFixed(2)}`]);
 
-  if (orderData.decorationName) {
+  if (orderData.decorationName && !isRowBasedDepartmentMode()) {
     rows.push(["Name", orderData.decorationName]);
   }
   if (orderData.decorationDepartment) {
@@ -2202,34 +2599,58 @@ function generateOrderSummary() {
   container.innerHTML = rows
     .map(
       ([key, value]) =>
-        `<div class="reviewRow"><span class="reviewKey">${key}</span><span>${value}</span></div>`,
+        `<div class="reviewRow"><span class="reviewKey">${escapeHtml(key)}</span><span>${escapeHtml(value)}</span></div>`,
     )
     .join("");
+
+  if (itemsMount) {
+    itemsMount.innerHTML =
+      reviewItems.length > 0
+        ? reviewItems
+            .map((item, index) => {
+              const metaLines = [
+                item.name
+                  ? `<div class="reviewItem__line"><span>Embroidery</span><strong>${escapeHtml(item.name)}</strong></div>`
+                  : "",
+                orderData.decorationDepartment
+                  ? `<div class="reviewItem__line"><span>Department</span><strong>${escapeHtml(orderData.decorationDepartment)}</strong></div>`
+                  : "",
+                `<div class="reviewItem__line"><span>Garment</span><strong>${escapeHtml(getGarmentName(item.garment || orderData.garment || ""))}</strong></div>`,
+                `<div class="reviewItem__line"><span>Size</span><strong>${escapeHtml(item.size || orderData.selectedSize || "Not selected")}</strong></div>`,
+                `<div class="reviewItem__line"><span>Qty</span><strong>${escapeHtml(item.quantity || 0)}</strong></div>`,
+              ]
+                .filter(Boolean)
+                .join("");
+
+              return `
+                <div class="reviewItem">
+                  <div class="reviewItem__top">
+                    <div class="reviewItem__title">Line item ${index + 1}</div>
+                    ${
+                      orderData.orderType === "department"
+                        ? `<button class="miniBtn" type="button" onclick="editPersonalization(${index + 1})">Edit</button>`
+                        : ""
+                    }
+                  </div>
+                  <div class="reviewItem__meta">${metaLines}</div>
+                </div>
+              `;
+            })
+            .join("")
+        : '<div class="reviewEmpty">No line items added yet.</div>';
+  }
 
   updateFinalTotal();
 }
 
 // Allow editing individual personalizations from review
 function editPersonalization(id) {
-  // go back to personalization section
   prevSection(3);
-  // ensure personalization items exist; rebuild from orderData if needed
-  const container = document.getElementById("personalizationItems");
-  if (!document.getElementById(`person-${id}`)) {
-    // clear and rebuild items
-    container.innerHTML = "";
-    personalizationCount = 0;
-    orderData.personalizationItems.forEach((p) => {
-      addPersonalizationItem();
-      // fill values into the last added item
-      const item = document.querySelector(`#person-${personalizationCount}`);
-      if (p.department)
-        item.querySelector('[data-field="department"]').value = p.department;
-      if (p.name) item.querySelector('[data-field="name"]').value = p.name;
-    });
+
+  if (orderData.orderType === "department") {
+    renderPersonalizationItems(orderData.personalizationItems);
   }
 
-  // Set the global size and quantity inputs
   if (orderData.selectedSize) {
     document.getElementById("sizeSelect").value = orderData.selectedSize;
   }
@@ -2237,7 +2658,6 @@ function editPersonalization(id) {
     document.getElementById("quantityInput").value = orderData.selectedQuantity;
   }
 
-  // focus the fields for the requested person
   const target = document.querySelector(`#person-${id}`);
   if (target) {
     target.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -2266,10 +2686,10 @@ function getDecorationName(decoration) {
   const names = {
     "no-personalisation": "No Personalisation (pre-decorated EE logo)",
     "name-only": "Individual name only (RHC)",
-    "logo-name": "Logo & individual name (RHC)",
+    "logo-name": "Logo + individual name (LHC)",
     "logo-only": "Logo only (RHC)",
     "dept-only": "Department name only",
-    "dept-name": "Department & individual name",
+    "dept-name": "Department + individual name",
   };
   return names[decoration] || decoration || "Not selected";
 }
@@ -2402,10 +2822,7 @@ function selectCheckoutShipping(type) {
 function updateFinalTotal() {
   collectPersonalizationData();
 
-  const totalQuantity = orderData.personalizationItems.reduce(
-    (sum, item) => sum + item.quantity,
-    0,
-  );
+  const totalQuantity = getTotalQuantity(orderData.personalizationItems);
   const garmentTotal =
     typeof orderData.totalGarmentPrice === "number"
       ? orderData.totalGarmentPrice
@@ -2486,31 +2903,31 @@ function renderCheckoutShippingErrors(errors) {
 
 function validateAddToCart() {
   const errors = [];
-  const requiresNameApproval =
-    orderData.decoration === "logo-name" ||
-    orderData.decoration === "name-only" ||
-    orderData.decoration === "dept-name";
+  const requiresNameApproval = decorationRequiresIndividualName();
+  const section2Validation = getSection2ValidationState();
   const confirmed =
     document.getElementById("confirmChecked") &&
     document.getElementById("confirmChecked").checked;
   const deliveryName = document.getElementById("deliveryNameSelect").value.trim();
   const shippingDetails = readShippingDetailsFromForm();
 
+  if (!section2Validation.isValid) {
+    section2Validation.errors.forEach((message) => {
+      if (!errors.includes(message)) {
+        errors.push(message);
+      }
+    });
+  }
+
   if (!deliveryName) {
     errors.push("Please enter a name on delivery.");
   }
 
-  if (!shippingDetails.unitNumber) {
-    errors.push("Please enter a unit number.");
-  }
   if (!shippingDetails.streetNumber) {
     errors.push("Please enter a street number.");
   }
   if (!shippingDetails.streetAddress1) {
     errors.push("Please enter street address line 1.");
-  }
-  if (!shippingDetails.streetAddress2) {
-    errors.push("Please enter street address line 2.");
   }
   if (!shippingDetails.suburb) {
     errors.push("Please enter a suburb.");
@@ -2677,22 +3094,28 @@ function editOrderFromCart(index) {
   // Populate form fields
   const orderTypeRadio = document.querySelector(`input[name="orderType"][value="${order.orderType}"]`);
   if (orderTypeRadio) {
+    orderTypeRadio.checked = true;
     const card = orderTypeRadio.closest(".choiceCard");
     if (card) {
-      card.classList.add("choiceCard--selected");
+      selectOrderType(order.orderType, card);
     }
+  } else {
+    selectOrderType(order.orderType);
   }
   document.getElementById("depot").value = order.depot;
+  selectDepot();
 
   // Show/hide department field based on order type
   if (order.orderType === "department") {
     document.getElementById("deptSelectSection1").style.display = "block";
     document.getElementById("departmentSelect").value = order.department;
+    selectDepartment();
   } else {
     document.getElementById("deptSelectSection1").style.display = "none";
   }
   document.getElementById("deliveryNameSelect").value = order.deliveryName || "";
   applyShippingDetailsToForm(order.shippingDetails || null);
+  updateShippingPrefillUI();
   if (order.shipping) {
     selectShipping(order.shipping);
   }
@@ -2700,33 +3123,14 @@ function editOrderFromCart(index) {
   syncDepartmentBulkUI();
 
   // Set garment
-  document.getElementById("garmentSelect").value = order.garment;
-  selectGarment(order.garment);
-
-  if (
-    order.orderType === "department" &&
-    Array.isArray(order.personalizationItems) &&
-    order.personalizationItems.length > 0
-  ) {
-    const container = document.getElementById("personalizationItems");
-    if (container) {
-      container.innerHTML = "";
-      personalizationCount = 0;
-      order.personalizationItems.forEach((item) => {
-        addPersonalizationItem();
-        const row = document.getElementById(`person-${personalizationCount}`);
-        if (!row) return;
-        const nameInput = row.querySelector('[data-field="name"]');
-        const qtyInput = row.querySelector('[data-field="quantity"]');
-        if (nameInput) {
-          nameInput.value = item.name || "";
-        }
-        if (qtyInput) {
-          qtyInput.value = Math.max(parseInt(item.quantity, 10) || 1, 1);
-        }
-      });
-    }
-  }
+  const rowBasedDepartmentOrder = isRowBasedDepartmentMode(
+    order.decoration,
+    order.orderType,
+  );
+  document.getElementById("garmentSelect").value = rowBasedDepartmentOrder
+    ? ""
+    : order.garment;
+  selectGarment(rowBasedDepartmentOrder ? "" : order.garment);
 
   // Set decoration
   const decorationSelect = document.getElementById("decorationSelect");
@@ -2752,7 +3156,7 @@ function editOrderFromCart(index) {
   }
 
   // Set name if applicable
-  if (order.decorationName) {
+  if (order.decorationName && !isRowBasedDepartmentMode(order.decoration, order.orderType)) {
     document.getElementById("decorationNameInput").value = order.decorationName;
     saveDecorationName(order.decorationName);
   }
@@ -2785,7 +3189,12 @@ function editOrderFromCart(index) {
     orderData.selectedQuantity = order.selectedQuantity;
   }
 
+  if (order.orderType === "department") {
+    renderPersonalizationItems(order.personalizationItems || []);
+  }
+
   updateGarmentPriceBasedOnQuantity();
+  validateSection2();
 
   // Go to section 2 (Garment & Decoration)
   setActiveSection(2);
@@ -3467,10 +3876,8 @@ function validateCartOrdersHaveShipping() {
     const hasAllDetails =
       !!order.deliveryName &&
       !!order.shipping &&
-      !!details.unitNumber &&
       !!details.streetNumber &&
       !!details.streetAddress1 &&
-      !!details.streetAddress2 &&
       !!details.suburb &&
       !!details.state &&
       !!details.postcode;
@@ -3569,6 +3976,7 @@ function resetForm() {
 
   // Reset section 2
   document.getElementById("garmentSelect").value = "";
+  document.getElementById("garmentSelectionField").style.display = "block";
   document.getElementById("sizeSelectionGroup").style.display = "none";
   const sizeMetricSelect = document.getElementById("sizeMetricSelect");
   if (sizeMetricSelect) {
@@ -3584,6 +3992,7 @@ function resetForm() {
   document.getElementById("logoSelectionGroup").style.display = "none";
   document.getElementById("logoSelect").value = "";
   document.getElementById("nameInputGroup").style.display = "none";
+  document.getElementById("nameApprovalGroup").style.display = "none";
   document.getElementById("decorationNameInput").value = "";
   document.getElementById("nameApprovalChecked").checked = false;
   document.getElementById("deptSelectionGroup").style.display = "none";
@@ -3602,6 +4011,16 @@ function resetForm() {
   // Reset section 3
   resetPerOrderShippingState();
   document.getElementById("confirmChecked").checked = false;
+  const orderSummaryContent = document.getElementById("orderSummaryContent");
+  if (orderSummaryContent) {
+    orderSummaryContent.innerHTML = "";
+  }
+  const personalizationReviewList = document.getElementById(
+    "personalizationReviewList",
+  );
+  if (personalizationReviewList) {
+    personalizationReviewList.innerHTML = "";
+  }
   clearAddToCartErrors();
 
   // Go to section 1

@@ -112,7 +112,8 @@
                                             <input type="radio" name="orderType" value="individual" />
                                             <div class="choiceCard__body">
                                                 <div class="choiceCard__title">Individual Person</div>
-                                                <div class="choiceCard__desc">Shipping captured per order in Review.</div>
+                                                <div class="choiceCard__desc">Shipping captured per order in Review.
+                                                </div>
                                             </div>
                                         </label>
 
@@ -322,7 +323,7 @@
                             </div>
 
                             <div class="fields">
-                                <div class="field">
+                                <div class="field" id="garmentSelectionField">
                                     <label class="label required">Select garment type</label>
                                     <select class="select" id="garmentSelect">
                                         <option value="">Select garment...</option>
@@ -371,7 +372,8 @@
                                     <label class="label required">Decoration option</label>
                                     <select class="select" id="decorationSelect">
                                         <option value="">Select decoration...</option>
-                                        <option value="no-personalisation">No Personalisation (pre-decorated EE logo)</option>
+                                        <option value="no-personalisation">No Personalisation (pre-decorated EE logo)
+                                        </option>
                                         <option value="logo-only">Embroider - Logo only (RHC)</option>
                                         <option value="logo-name">Embroider - Logo + individual name (LHC)</option>
                                         <option value="name-only">Embroider - Individual name only (RHC)</option>
@@ -384,11 +386,13 @@
                                     <label class="label required">Select logo</label>
                                     <select class="select" id="logoSelect">
                                         <option value="">Select logo...</option>
-                                        <option value="Essential Energy Training Academy">Essential Energy Training Academy</option>
+                                        <option value="Essential Energy Training Academy">Essential Energy Training
+                                            Academy</option>
                                         <option value="Metre 2 Cash logo">Metre 2 Cash logo</option>
                                     </select>
                                     <div class="hint">
-                                        All garments are pre-decorated with the normal EE logo if this option is not selected.
+                                        All garments are pre-decorated with the normal EE logo if this option is not
+                                        selected.
                                     </div>
                                 </div>
 
@@ -396,7 +400,9 @@
                                     <label class="label required">Individual person's name</label>
                                     <input class="input" type="text" id="decorationNameInput"
                                         placeholder="Enter person's name" />
+                                </div>
 
+                                <div class="field" id="nameApprovalGroup" style="display: none">
                                     <label class="checkline">
                                         <input type="checkbox" id="nameApprovalChecked" />
                                         <span>
@@ -489,11 +495,14 @@
                                     <label class="label">Department order line items</label>
                                     <div id="personalizationItems" class="bulkRows"></div>
                                     <div style="margin-top: 10px; display: flex; justify-content: flex-start;">
-                                        <button class="btn btn--ghost" type="button" id="addPersonBtn" style="width: auto;">Add more +</button>
+                                        <button class="btn btn--ghost" type="button" id="addPersonBtn"
+                                            style="width: auto;">Add more +</button>
                                     </div>
                                     <div class="hint">
-                                        If you are processing a bulk department order with multiple shipping allocations,
-                                        process separate addressees as <strong>individual orders</strong> so they can be shipped separately.
+                                        If you are processing a bulk department order with multiple shipping
+                                        allocations,
+                                        process separate addressees as <strong>individual orders</strong> so they can be
+                                        shipped separately.
                                     </div>
                                 </div>
                             </div>
@@ -512,6 +521,14 @@
                             </div>
 
                             <div class="reviewGrid">
+                                <div class="reviewCard">
+                                    <div class="reviewCard__title">Order summary</div>
+                                    <div class="reviewCard__body">
+                                        <div id="orderSummaryContent"></div>
+                                        <div id="personalizationReviewList" class="reviewItems"></div>
+                                    </div>
+                                </div>
+
                                 <div class="reviewCard reviewCard--confirmation">
                                     <div class="reviewCard__title">Confirmation</div>
                                     <label class="checkline">
