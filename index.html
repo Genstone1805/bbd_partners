@@ -18,7 +18,7 @@
                 <div class="brand">
                     <div class="brand__mark" aria-hidden="true">BD</div>
                     <div class="brand__text">
-                        <div class="brand__title">Black DOg Ink</div>
+                        <div class="brand__title">BlackDog Ink</div>
                         <div class="brand__sub">Garment Ordering Portal</div>
                     </div>
                 </div>
@@ -545,6 +545,22 @@
                                         <strong>individual orders</strong> for each address.
                                     </div>
 
+                                    <div class="addressPrefill">
+                                        <div class="addressPrefill__content">
+                                            <strong>Address prefill</strong>
+                                            <div class="hint" id="shippingAddressPrefillHint">
+                                                Select a cost centre above to unlock address prefill, or enter the
+                                                delivery details manually below.
+                                            </div>
+                                        </div>
+                                        <div class="addressPrefill__actions">
+                                            <button class="btn btn--ghost" type="button"
+                                                id="clearShippingAddressBtn">Clear fields</button>
+                                            <button class="btn btn--primary" type="button"
+                                                id="prefillShippingAddressBtn">Use cost centre address</button>
+                                        </div>
+                                    </div>
+
                                     <div id="departmentShippingFields">
                                         <div class="field" style="margin-top: 14px">
                                             <label class="label required">Name on delivery</label>
@@ -572,7 +588,8 @@
                                         </div>
 
                                         <div class="field">
-                                            <label class="label required">Street Address Line 2</label>
+                                            <label class="label">Street Address Line 2 <span
+                                                    class="muted">(Optional)</span></label>
                                             <input class="input" id="shippingStreetAddress2" type="text"
                                                 placeholder="Enter street address line 2" />
                                         </div>
